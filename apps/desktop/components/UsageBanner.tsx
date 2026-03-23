@@ -1,0 +1,68 @@
+"use client";
+
+import { useCallback } from "react";
+import { useUsageStore } from "@/stores/usage-store";
+import { useIdentityStore } from "@/stores/identity-store";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+export default function UsageBanner() {
+  const { warning, blocked, totalTokens, limit } = useUsageStore();
+  const user = useIdentityStore((s) => s.user);
+  const getHeaders = useIdentityStore((s) => s.getHeaders);
+
+  const handleUpgrade = useCallback(async () => {
+    if (!user?.email) return;
+    try {
+      const res = await fetch(`${API_URL}/billing/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getHeaders() },
+        body: JSON.stringify({ email: user.email }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err) {
+      console.error("Upgrade failed:", err);
+    }
+  }, [user, getHeaders]);
+
+  if (!warning && !blocked) return null;
+
+  const percentage = Math.min(100, Math.round((totalTokens / limit) * 100));
+
+  if (blocked) {
+    return (
+      <div className="px-4 py-2 bg-red-900/40 border-b border-red-500/20 flex items-center justify-between">
+        <p className="text-xs text-red-300">
+          Usage limit reached ({percentage}%).
+        </p>
+        {user && (
+          <button
+            onClick={handleUpgrade}
+            className="text-xs px-2 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white transition"
+          >
+            Upgrade
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 py-2 bg-amber-900/30 border-b border-amber-500/20 flex items-center justify-between">
+      <p className="text-xs text-amber-300">
+        Nearing usage limit ({percentage}% used).
+      </p>
+      {user && (
+        <button
+          onClick={handleUpgrade}
+          className="text-xs px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-white transition"
+        >
+          Upgrade
+        </button>
+      )}
+    </div>
+  );
+}

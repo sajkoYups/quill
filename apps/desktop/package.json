@@ -1,0 +1,37 @@
+{
+  "name": "@quill/desktop",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist-electron/main/index.js",
+  "scripts": {
+    "dev": "concurrently -n next,electron \"next dev -p 3000\" \"npm run dev:electron\"",
+    "dev:next": "next dev -p 3000",
+    "dev:electron": "npm run build:electron && wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .",
+    "build:next": "next build",
+    "build:electron": "tsup electron/main/index.ts electron/preload/index.ts --out-dir dist-electron --format cjs --no-dts --clean --external electron --external electron-store",
+    "build": "npm run build:next && npm run build:electron",
+    "start": "electron .",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@quill/shared": "^0.0.1",
+    "@supabase/supabase-js": "^2.100.0",
+    "next": "^16.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/typography": "^0.5.19",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^41.0.3",
+    "electron-store": "^11.0.2",
+    "jiti": "^2.6.1",
+    "tailwindcss": "^4.2.2",
+    "tsup": "^8.5.1",
+    "wait-on": "^9.0.4"
+  }
+}

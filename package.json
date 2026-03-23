@@ -1,0 +1,14 @@
+{
+  "name": "quill",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @quill/shared && npm run build -w @quill/api && npm run build:electron -w @quill/desktop",
+    "build:shared": "npm run build -w @quill/shared",
+    "dev:api": "npm run dev -w @quill/api",
+    "dev:desktop": "npm run dev -w @quill/desktop"
+  }
+}
