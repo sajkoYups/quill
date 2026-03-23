@@ -4,11 +4,14 @@ import { useCallback } from "react";
 import { useChatStore } from "@/stores/chat-store";
 import { useUIStore } from "@/stores/ui-store";
 
-export default function ChatList() {
+interface ChatListProps {
+  onNewChat?: () => void | Promise<void>;
+}
+
+export default function ChatList({ onNewChat }: ChatListProps) {
   const chats = useChatStore((s) => s.chats);
   const activeChatId = useChatStore((s) => s.activeChatId);
   const setActiveChat = useChatStore((s) => s.setActiveChat);
-  const createChat = useChatStore((s) => s.createChat);
   const deleteChat = useChatStore((s) => s.deleteChat);
   const setShowChatList = useUIStore((s) => s.setShowChatList);
 
@@ -17,8 +20,10 @@ export default function ChatList() {
     setShowChatList(false);
   };
 
-  const handleNewChat = () => {
-    createChat();
+  const handleNewChat = async () => {
+    if (onNewChat) {
+      await onNewChat();
+    }
     setShowChatList(false);
   };
 

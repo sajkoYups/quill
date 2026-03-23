@@ -28,6 +28,8 @@ export default function Sidebar() {
 
   const activeChatId = useChatStore((s) => s.activeChatId);
   const createChat = useChatStore((s) => s.createChat);
+  const replaceChatId = useChatStore((s) => s.replaceChatId);
+  const setActiveChat = useChatStore((s) => s.setActiveChat);
   const addScreenshot = useChatStore((s) => s.addScreenshot);
   const addUserMessage = useChatStore((s) => s.addUserMessage);
   const addAssistantMessage = useChatStore((s) => s.addAssistantMessage);
@@ -36,6 +38,7 @@ export default function Sidebar() {
 
   const initGuest = useIdentityStore((s) => s.initGuest);
   const getHeaders = useIdentityStore((s) => s.getHeaders);
+  const isIdentityInitialized = useIdentityStore((s) => s.isInitialized);
   const user = useIdentityStore((s) => s.user);
   const signOut = useIdentityStore((s) => s.signOut);
 
@@ -53,11 +56,36 @@ export default function Sidebar() {
     initGuest(API_URL);
   }, [setIsPinned, initGuest]);
 
-  useEffect(() => {
-    if (!activeChatId) {
-      createChat();
+  const createChatOnServer = useCallback(async () => {
+    const res = await fetch(`${API_URL}/chats`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getHeaders() },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to create chat: ${res.status} ${text}`);
     }
-  }, [activeChatId, createChat]);
+    const data = await res.json();
+    return String(data.id);
+  }, [getHeaders]);
+
+  useEffect(() => {
+    if (!isIdentityInitialized) return;
+    if (activeChatId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const chatId = await createChatOnServer();
+        if (!cancelled) createChat(chatId);
+      } catch (err) {
+        console.error("Failed to initialize chat:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChatId, createChat, createChatOnServer, isIdentityInitialized]);
 
   const handleTogglePin = useCallback(async () => {
     if (!window.electronAPI) return;
@@ -79,16 +107,27 @@ export default function Sidebar() {
   const handleSend = useCallback(async () => {
     const message = input.trim();
     if (!message || isLoading) return;
+    if (!isIdentityInitialized) return;
+    if (!activeChatId) return;
 
     setInput("");
     addUserMessage(message);
     setIsLoading(true);
 
     try {
+      let chatId = activeChatId;
+      // Migrate legacy local IDs (chat-...) to server UUID chat IDs.
+      if (chatId.startsWith("chat-")) {
+        const serverChatId = await createChatOnServer();
+        replaceChatId(chatId, serverChatId);
+        setActiveChat(serverChatId);
+        chatId = serverChatId;
+      }
+
       const history = getRecentHistory(10);
       const screenshot = getLatestScreenshot();
 
-      const res = await fetch(`${API_URL}/chats/${activeChatId}/ask`, {
+      const res = await fetch(`${API_URL}/chats/${chatId}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getHeaders() },
         body: JSON.stringify({
@@ -112,11 +151,17 @@ export default function Sidebar() {
   }, [
     input,
     isLoading,
+    isIdentityInitialized,
     activeChatId,
     addUserMessage,
     addAssistantMessage,
     getRecentHistory,
     getLatestScreenshot,
+    createChatOnServer,
+    replaceChatId,
+    setActiveChat,
+    getHeaders,
+    fetchUsage,
   ]);
 
   const handleKeyDown = useCallback(
@@ -129,9 +174,15 @@ export default function Sidebar() {
     [handleSend]
   );
 
-  const handleNewChat = useCallback(() => {
-    createChat();
-  }, [createChat]);
+  const handleNewChat = useCallback(async () => {
+    if (!isIdentityInitialized) return;
+    try {
+      const chatId = await createChatOnServer();
+      createChat(chatId);
+    } catch (err) {
+      console.error("Failed to create chat:", err);
+    }
+  }, [createChatOnServer, createChat, isIdentityInitialized]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -217,7 +268,7 @@ export default function Sidebar() {
       ) : showSettings ? (
         <SettingsScreen onClose={() => setShowSettings(false)} />
       ) : showChatList ? (
-        <ChatList />
+        <ChatList onNewChat={handleNewChat} />
       ) : (
         <ChatTimeline isLoading={isLoading} />
       )}

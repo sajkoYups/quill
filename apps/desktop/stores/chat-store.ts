@@ -20,7 +20,8 @@ interface ChatState {
   activeChatId: string | null;
 
   getActiveChat: () => ChatSession | undefined;
-  createChat: () => string;
+  createChat: (chatId: string) => string;
+  replaceChatId: (oldChatId: string, newChatId: string) => void;
   setActiveChat: (chatId: string) => void;
   addScreenshot: (dataUrl: string) => void;
   addUserMessage: (content: string) => void;
@@ -35,10 +36,6 @@ function makeEntryId() {
   return `entry-${Date.now()}-${nextEntryId++}`;
 }
 
-function makeChatId() {
-  return `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 export const useChatStore = create<ChatState>((set, get) => ({
   chats: [],
   activeChatId: null,
@@ -48,10 +45,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     return chats.find((c) => c.id === activeChatId);
   },
 
-  createChat: () => {
-    const id = makeChatId();
+  createChat: (chatId) => {
     const chat: ChatSession = {
-      id,
+      id: chatId,
       title: "New Chat",
       entries: [],
       latestScreenshot: null,
@@ -59,9 +55,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
     };
     set((state) => ({
       chats: [chat, ...state.chats],
-      activeChatId: id,
+      activeChatId: chatId,
     }));
-    return id;
+    return chatId;
+  },
+
+  replaceChatId: (oldChatId, newChatId) => {
+    set((state) => {
+      const chats = state.chats.map((chat) =>
+        chat.id === oldChatId ? { ...chat, id: newChatId } : chat
+      );
+      const activeChatId =
+        state.activeChatId === oldChatId ? newChatId : state.activeChatId;
+      return { chats, activeChatId };
+    });
   },
 
   setActiveChat: (chatId) => {
