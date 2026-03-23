@@ -64,3 +64,11 @@
   - Added retrieval step in ask orchestration that ranks chunks against the current question and appends bounded document context before provider call
   - Added desktop attachment panel for upload/select/delete and sending selected document IDs with ask requests
 - **Prerequisites:** Supabase `documents` storage bucket and SQL migration `supabase/migrations/002_documents.sql`
+
+## Chunk 14: Document timeline + composer staging UX
+- **Status:** Complete
+- **Tested:** Yes -- desktop build passes; user messages can carry attachment metadata; composer shows staging vs library; deselect-after-success on ask
+- **Implemented:**
+  - Extended client `TimelineEntry` / `addUserMessage` with optional `attachedDocumentIds` and `attachedDocumentLabels`
+  - Timeline renders document chips grouped with the user bubble; composer panel shows only selected files for “next message” plus collapsible library
+  - Fetched documents default unselected; successful ask deselects IDs that were included; paperclip button in input row for attach

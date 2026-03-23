@@ -17,11 +17,48 @@ function ScreenshotCard({ entry }: { entry: TimelineEntry }) {
   );
 }
 
+/** User turn: optional document chips above the text bubble (from attachedDocument* on the entry). */
 function UserBubble({ entry }: { entry: TimelineEntry }) {
+  const ids = entry.attachedDocumentIds ?? [];
+  const labels = entry.attachedDocumentLabels ?? [];
+  const hasAttachments = ids.length > 0 || labels.length > 0;
+  const chipTexts =
+    labels.length > 0
+      ? labels.map((label, i) => label || ids[i] || "File")
+      : ids.map((id) => id);
+
   return (
     <div className="flex justify-end my-1.5">
-      <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-md bg-blue-600 text-sm leading-relaxed">
-        {entry.content}
+      <div className="max-w-[85%] flex flex-col items-end gap-1.5">
+        {hasAttachments ? (
+          <div className="flex flex-wrap justify-end gap-1">
+            {chipTexts.map((text, i) => (
+              <span
+                key={`${entry.id}-att-${i}`}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] border border-white/20 bg-white/10 text-white/90 max-w-full"
+                title="Attached for this message"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="shrink-0 text-white/50"
+                  aria-hidden
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                <span className="truncate">{text}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div className="px-3 py-2 rounded-2xl rounded-br-md bg-blue-600 text-sm leading-relaxed w-full">
+          {entry.content}
+        </div>
       </div>
     </div>
   );

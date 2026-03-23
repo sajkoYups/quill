@@ -671,6 +671,14 @@ root/
 * auth UI
 * usage UI
 
+**Document staging + timeline (client):**
+
+* The composer treats **selected** documents as “included on the next Send”; a **Library** section lists other files in the chat so the user can toggle them in.
+* Documents fetched from the API for a chat default to **unselected** so nothing is sent until the user opts in; **new uploads** default to **selected** for the next message.
+* When the user sends a message, optional `attachedDocumentIds` / `attachedDocumentLabels` are stored on that **user** timeline entry so attachment **chips** render above the bubble in the scrollable timeline.
+* After a **successful** `/ask` response, IDs that were sent are **deselected** in the composer so the following message does not reuse them unless the user selects them again.
+* A paperclip control in the input row duplicates “Add file” for quick access.
+
 #### api/src/providers
 
 * OpenAI provider

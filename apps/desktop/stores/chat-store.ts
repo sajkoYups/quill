@@ -1,3 +1,8 @@
+/**
+ * Chat sessions: timeline entries (messages, screenshots) plus a per-chat document library from the API.
+ * User entries may include attachedDocumentIds / attachedDocumentLabels so the timeline can show
+ * which files were sent with that message. Selection on ChatDocument controls the next /ask only.
+ */
 import { create } from "zustand";
 
 export interface TimelineEntry {
@@ -5,6 +10,10 @@ export interface TimelineEntry {
   type: "screenshot" | "user" | "assistant";
   content: string;
   timestamp: number;
+  /** Snapshot of document IDs included when this user message was sent (for timeline chips). */
+  attachedDocumentIds?: string[];
+  /** Filenames at send time so chips render without depending on documents[]. */
+  attachedDocumentLabels?: string[];
 }
 
 export interface ChatDocument {
@@ -36,12 +45,19 @@ interface ChatState {
   replaceChatId: (oldChatId: string, newChatId: string) => void;
   setActiveChat: (chatId: string) => void;
   addScreenshot: (dataUrl: string) => void;
-  addUserMessage: (content: string) => void;
+  addUserMessage: (
+    content: string,
+    options?: {
+      attachedDocumentIds?: string[];
+      attachedDocumentLabels?: string[];
+    }
+  ) => void;
   addAssistantMessage: (content: string) => void;
   setChatDocuments: (chatId: string, documents: ChatDocument[]) => void;
   upsertDocument: (chatId: string, document: ChatDocument) => void;
   toggleDocumentSelected: (chatId: string, documentId: string) => void;
   removeDocument: (chatId: string, documentId: string) => void;
+  deselectDocuments: (chatId: string, documentIds: string[]) => void;
   getSelectedDocumentIds: () => string[];
   deleteChat: (chatId: string) => void;
   getRecentHistory: (count?: number) => Array<{ role: "user" | "assistant"; content: string }>;
@@ -124,7 +140,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }));
   },
 
-  addUserMessage: (content) => {
+  addUserMessage: (content, options) => {
     const { activeChatId } = get();
     if (!activeChatId) return;
 
@@ -133,6 +149,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       type: "user",
       content,
       timestamp: Date.now(),
+      ...(options?.attachedDocumentIds?.length
+        ? {
+            attachedDocumentIds: options.attachedDocumentIds,
+            attachedDocumentLabels: options.attachedDocumentLabels ?? [],
+          }
+        : {}),
     };
 
     set((state) => ({
@@ -213,6 +235,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
           ? {
               ...c,
               documents: c.documents.filter((d) => d.id !== documentId),
+            }
+          : c
+      ),
+    }));
+  },
+
+  deselectDocuments: (chatId, documentIds) => {
+    if (documentIds.length === 0) return;
+    set((state) => ({
+      chats: state.chats.map((c) =>
+        c.id === chatId
+          ? {
+              ...c,
+              documents: c.documents.map((d) =>
+                documentIds.includes(d.id) ? { ...d, selected: false } : d
+              ),
             }
           : c
       ),

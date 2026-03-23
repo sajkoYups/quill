@@ -43,6 +43,7 @@ export default function Sidebar() {
   const toggleDocumentSelected = useChatStore((s) => s.toggleDocumentSelected);
   const removeDocument = useChatStore((s) => s.removeDocument);
   const getSelectedDocumentIds = useChatStore((s) => s.getSelectedDocumentIds);
+  const deselectDocuments = useChatStore((s) => s.deselectDocuments);
   const activeChat = useChatStore((s) =>
     s.chats.find((chat) => chat.id === s.activeChatId)
   );
@@ -112,7 +113,7 @@ export default function Sidebar() {
         if (cancelled) return;
         setChatDocuments(
           activeChatId,
-          docs.map((doc: any) => ({ ...doc, selected: true }))
+          docs.map((doc: any) => ({ ...doc, selected: false }))
         );
       } catch (err) {
         console.error("Failed to load documents:", err);
@@ -147,8 +148,18 @@ export default function Sidebar() {
     if (!isIdentityInitialized) return;
     if (!activeChatId) return;
 
+    const documentIds = getSelectedDocumentIds();
+    const chatForLabels = useChatStore.getState().getActiveChat();
+    const attachedDocumentLabels = documentIds.map(
+      (id) => chatForLabels?.documents.find((d) => d.id === id)?.filename ?? id
+    );
+
     setInput("");
-    addUserMessage(message);
+    addUserMessage(message, {
+      attachedDocumentIds: documentIds.length ? documentIds : undefined,
+      attachedDocumentLabels:
+        documentIds.length ? attachedDocumentLabels : undefined,
+    });
     setIsLoading(true);
 
     try {
@@ -163,7 +174,6 @@ export default function Sidebar() {
 
       const history = getRecentHistory(10);
       const screenshot = getLatestScreenshot();
-      const documentIds = getSelectedDocumentIds();
 
       const res = await fetch(`${API_URL}/chats/${chatId}/ask`, {
         method: "POST",
@@ -180,6 +190,9 @@ export default function Sidebar() {
 
       const data = await res.json();
       addAssistantMessage(data.response);
+      if (documentIds.length > 0) {
+        deselectDocuments(chatId, documentIds);
+      }
       fetchUsage(API_URL, getHeaders());
     } catch (err) {
       console.error("Send failed:", err);
@@ -200,6 +213,7 @@ export default function Sidebar() {
     replaceChatId,
     setActiveChat,
     getSelectedDocumentIds,
+    deselectDocuments,
     getHeaders,
     fetchUsage,
   ]);
@@ -404,6 +418,25 @@ export default function Sidebar() {
           />
           <div className="flex gap-2">
             <ScreenshotButton onScreenshotCaptured={handleScreenshotCaptured} />
+            <button
+              type="button"
+              onClick={handlePickDocument}
+              disabled={isUploadingDocument || isLoading}
+              title="Attach file"
+              className="shrink-0 px-2 py-2 rounded-lg bg-white/10 hover:bg-white/15 transition disabled:opacity-50 text-white/70"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden
+              >
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+            </button>
             <input
               type="text"
               value={input}
