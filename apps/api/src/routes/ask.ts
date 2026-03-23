@@ -6,6 +6,7 @@ import { handleAsk } from "../controllers/ask-controller.js";
 const askBodySchema = z.object({
   message: z.string().min(1),
   screenshot: z.string().optional(),
+  documentIds: z.array(z.string().uuid()).optional().default([]),
   history: z
     .array(
       z.object({

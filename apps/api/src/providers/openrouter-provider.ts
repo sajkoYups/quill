@@ -39,7 +39,10 @@ export class OpenRouterProvider implements AIProvider {
     ];
 
     for (const msg of messages) {
-      if (msg.role === "system") continue;
+      if (msg.role === "system") {
+        orMessages.push({ role: "system", content: msg.content });
+        continue;
+      }
       orMessages.push({ role: msg.role, content: msg.content });
     }
 

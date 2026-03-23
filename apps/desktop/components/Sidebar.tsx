@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useChatStore } from "@/stores/chat-store";
 import { useUIStore } from "@/stores/ui-store";
 import { useIdentityStore } from "@/stores/identity-store";
@@ -10,6 +10,7 @@ import ChatList from "./ChatList";
 import AuthScreen from "./AuthScreen";
 import UsageBanner from "./UsageBanner";
 import SettingsScreen from "./SettingsScreen";
+import DocumentAttachmentPanel from "./DocumentAttachmentPanel";
 import { useUsageStore } from "@/stores/usage-store";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -20,6 +21,8 @@ export default function Sidebar() {
   const [isLoading, setIsLoading] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isPinned = useUIStore((s) => s.isPinned);
   const setIsPinned = useUIStore((s) => s.setIsPinned);
@@ -35,6 +38,14 @@ export default function Sidebar() {
   const addAssistantMessage = useChatStore((s) => s.addAssistantMessage);
   const getRecentHistory = useChatStore((s) => s.getRecentHistory);
   const getLatestScreenshot = useChatStore((s) => s.getLatestScreenshot);
+  const setChatDocuments = useChatStore((s) => s.setChatDocuments);
+  const upsertDocument = useChatStore((s) => s.upsertDocument);
+  const toggleDocumentSelected = useChatStore((s) => s.toggleDocumentSelected);
+  const removeDocument = useChatStore((s) => s.removeDocument);
+  const getSelectedDocumentIds = useChatStore((s) => s.getSelectedDocumentIds);
+  const activeChat = useChatStore((s) =>
+    s.chats.find((chat) => chat.id === s.activeChatId)
+  );
 
   const initGuest = useIdentityStore((s) => s.initGuest);
   const getHeaders = useIdentityStore((s) => s.getHeaders);
@@ -87,6 +98,32 @@ export default function Sidebar() {
     };
   }, [activeChatId, createChat, createChatOnServer, isIdentityInitialized]);
 
+  useEffect(() => {
+    if (!activeChatId || !isIdentityInitialized) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/chats/${activeChatId}/documents`, {
+          headers: { ...getHeaders() },
+        });
+        if (!res.ok) return;
+        const docs = await res.json();
+        if (cancelled) return;
+        setChatDocuments(
+          activeChatId,
+          docs.map((doc: any) => ({ ...doc, selected: true }))
+        );
+      } catch (err) {
+        console.error("Failed to load documents:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChatId, getHeaders, isIdentityInitialized, setChatDocuments]);
+
   const handleTogglePin = useCallback(async () => {
     if (!window.electronAPI) return;
     const newPinned = await window.electronAPI.togglePin();
@@ -126,6 +163,7 @@ export default function Sidebar() {
 
       const history = getRecentHistory(10);
       const screenshot = getLatestScreenshot();
+      const documentIds = getSelectedDocumentIds();
 
       const res = await fetch(`${API_URL}/chats/${chatId}/ask`, {
         method: "POST",
@@ -133,6 +171,7 @@ export default function Sidebar() {
         body: JSON.stringify({
           message,
           screenshot: screenshot || undefined,
+          documentIds,
           history: history.slice(0, -1),
         }),
       });
@@ -160,9 +199,82 @@ export default function Sidebar() {
     createChatOnServer,
     replaceChatId,
     setActiveChat,
+    getSelectedDocumentIds,
     getHeaders,
     fetchUsage,
   ]);
+
+  const handlePickDocument = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFilePicked = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file || !activeChatId || !isIdentityInitialized) return;
+
+      setIsUploadingDocument(true);
+      try {
+        const fileData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+
+        const res = await fetch(`${API_URL}/chats/${activeChatId}/documents`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...getHeaders() },
+          body: JSON.stringify({
+            filename: file.name,
+            mimeType: file.type || "application/octet-stream",
+            fileData,
+          }),
+        });
+
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(body?.error || "Failed to upload document");
+        }
+
+        upsertDocument(activeChatId, { ...body, selected: true });
+      } catch (err) {
+        console.error("Document upload failed:", err);
+      } finally {
+        setIsUploadingDocument(false);
+      }
+    },
+    [activeChatId, getHeaders, isIdentityInitialized, upsertDocument]
+  );
+
+  const handleToggleDocument = useCallback(
+    (documentId: string) => {
+      if (!activeChatId) return;
+      toggleDocumentSelected(activeChatId, documentId);
+    },
+    [activeChatId, toggleDocumentSelected]
+  );
+
+  const handleDeleteDocument = useCallback(
+    async (documentId: string) => {
+      if (!activeChatId) return;
+      try {
+        const res = await fetch(
+          `${API_URL}/chats/${activeChatId}/documents/${documentId}`,
+          {
+            method: "DELETE",
+            headers: { ...getHeaders() },
+          }
+        );
+        if (!res.ok) throw new Error("Delete failed");
+        removeDocument(activeChatId, documentId);
+      } catch (err) {
+        console.error("Failed to delete document:", err);
+      }
+    },
+    [activeChatId, getHeaders, removeDocument]
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -276,6 +388,20 @@ export default function Sidebar() {
       {/* Input bar */}
       {!showChatList && !showAuth && !showSettings && (
         <footer className="border-t border-white/[0.08] p-3 shrink-0">
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".pdf,.docx,.xlsx,.csv,.txt,.json,.md"
+            onChange={handleFilePicked}
+          />
+          <DocumentAttachmentPanel
+            documents={activeChat?.documents || []}
+            uploading={isUploadingDocument}
+            onPickFile={handlePickDocument}
+            onToggleSelected={handleToggleDocument}
+            onDelete={handleDeleteDocument}
+          />
           <div className="flex gap-2">
             <ScreenshotButton onScreenshotCaptured={handleScreenshotCaptured} />
             <input

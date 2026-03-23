@@ -23,7 +23,10 @@ export class OpenAIProvider implements AIProvider {
     ];
 
     for (const msg of messages) {
-      if (msg.role === "system") continue;
+      if (msg.role === "system") {
+        openaiMessages.push({ role: "system", content: msg.content });
+        continue;
+      }
       openaiMessages.push({ role: msg.role, content: msg.content });
     }
 

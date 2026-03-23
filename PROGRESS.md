@@ -53,3 +53,14 @@
 - **Status:** Complete
 - **Tested:** Yes -- Delete chat flow (backend + frontend with confirmation), settings screen (account info, usage meter), settings API (GET/PUT /settings), basic empty states, usage progress bar, all builds pass
 - **Prerequisites:** Sentry DSN (optional, can be added later)
+
+## Chunk 13: Document Upload + AI Context
+- **Status:** Complete
+- **Tested:** Yes -- API build passes with parser dependencies, desktop build passes with document attachment UI, ask flow now supports optional `documentIds` and injects retrieved chunks into model context
+- **Implemented:**
+  - Added document schema migration (`documents`, `document_chunks`) with chat-scoped retention
+  - Added API endpoints: `GET/POST /chats/:chatId/documents`, `DELETE /chats/:chatId/documents/:documentId`
+  - Added server-side extraction/chunking for PDF, DOCX, XLSX, CSV, TXT, JSON, MD with centralized limits/allowlist
+  - Added retrieval step in ask orchestration that ranks chunks against the current question and appends bounded document context before provider call
+  - Added desktop attachment panel for upload/select/delete and sending selected document IDs with ask requests
+- **Prerequisites:** Supabase `documents` storage bucket and SQL migration `supabase/migrations/002_documents.sql`

@@ -4,6 +4,8 @@ import { isSupabaseConfigured } from "../db/supabase.js";
 import * as messageService from "../services/message-service.js";
 import * as screenshotService from "../services/screenshot-service.js";
 import * as usageService from "../services/usage-service.js";
+import * as chatService from "../services/chat-service.js";
+import * as documentService from "../services/document-service.js";
 import { AppError } from "../utils/app-error.js";
 import type { ChatMessage } from "../providers/index.js";
 import { createProvider } from "../providers/index.js";
@@ -15,9 +17,16 @@ export async function handleAsk(
 ) {
   try {
     const chatId = String(req.params.chatId);
-    const { message, screenshot, history } = req.body;
+    if (!req.identity) throw AppError.unauthorized();
+    const { message, screenshot, history, documentIds } = req.body;
 
-    if (req.identity && isSupabaseConfigured()) {
+    await chatService.assertChatOwnedByIdentity(
+      chatId,
+      req.identity.ownerType,
+      req.identity.ownerId
+    );
+
+    if (isSupabaseConfigured()) {
       const limit = await usageService.checkLimit(
         req.identity.ownerType,
         req.identity.ownerId
@@ -47,12 +56,25 @@ export async function handleAsk(
       { role: "user" as const, content: message },
     ];
 
-    const result = await askWithScreenshot(messages, screenshotForAI);
+    const { context: documentContext } =
+      isSupabaseConfigured() && req.identity
+        ? await documentService.getRelevantDocumentContext(
+            chatId,
+            message,
+            documentIds
+          )
+        : { context: "" };
+
+    const result = await askWithScreenshot(
+      messages,
+      screenshotForAI,
+      documentContext
+    );
 
     if (isSupabaseConfigured()) {
       await messageService.appendMessage(chatId, "assistant", result.content);
 
-      if (req.identity && result.usage) {
+      if (result.usage) {
         const provider = createProvider();
         await usageService.logUsage({
           ownerType: req.identity.ownerType,

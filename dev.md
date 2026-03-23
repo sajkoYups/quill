@@ -313,6 +313,31 @@ This `device_id` must be sent with backend requests whenever there is no logged-
 * monitor_label
 * created_at
 
+### documents
+
+* id
+* chat_id
+* filename
+* mime_type
+* extension
+* size_bytes
+* storage_path
+* public_or_signed_url
+* extraction_status (`pending`, `ready`, `failed`)
+* extraction_error
+* created_at
+* updated_at
+
+### document_chunks
+
+* id
+* document_id
+* chunk_index
+* content
+* token_estimate
+* metadata
+* created_at
+
 ### message_screenshot_links
 
 Use this if needed instead of a direct `message_id` on screenshots.
@@ -444,6 +469,25 @@ Recommended storage:
 * support secure upload handling
 * support deletion later
 * support retrieving stored screenshots for old chats
+
+### Document Storage
+
+Uploaded documents are chat-scoped and retained for reuse in later questions within the same chat.
+
+Recommended storage:
+
+* Supabase Storage bucket for documents
+* Postgres metadata row in `documents`
+* Parsed chunk rows in `document_chunks`
+
+### Document Processing Flow
+
+1. Desktop uploads document payload (base64 + metadata)
+2. Backend validates file type and size
+3. Backend stores original file in storage and metadata in `documents`
+4. Backend extracts text by file type (PDF/DOCX/XLSX/CSV/text-like)
+5. Backend chunks extracted text and stores chunks in `document_chunks`
+6. Ask flow ranks relevant chunks and injects bounded context into provider request
 
 ---
 
@@ -665,6 +709,12 @@ root/
 
 * `POST /chats/:chatId/screenshots`
 
+### Documents
+
+* `GET /chats/:chatId/documents`
+* `POST /chats/:chatId/documents`
+* `DELETE /chats/:chatId/documents/:documentId`
+
 ### AI
 
 * `POST /chats/:chatId/ask`
@@ -703,12 +753,41 @@ Responsibilities:
 * attach screenshot to timeline
 * fetch screenshot URLs for history
 
+### Document Service
+
+Responsibilities:
+
+* validate uploaded document type/size/count limits
+* upload original document to storage
+* extract text based on file type
+* split and persist retrieval chunks
+* list/delete chat documents
+* retrieve and rank relevant chunks per ask request
+
+Supported formats (V1):
+
+* PDF (`.pdf`)
+* DOCX (`.docx`)
+* XLSX (`.xlsx`)
+* CSV (`.csv`)
+* TXT (`.txt`)
+* JSON (`.json`)
+* Markdown (`.md`)
+
+Limits (env-configurable):
+
+* `MAX_DOCUMENT_SIZE_BYTES` (default 15MB per file)
+* `MAX_DOCUMENTS_PER_CHAT` (default 25)
+* `MAX_DOCUMENT_CONTEXT_CHUNKS` (default 6)
+* `MAX_DOCUMENT_CONTEXT_CHARS` (default 12000)
+
 ### AI Service
 
 Responsibilities:
 
 * gather recent context
 * gather relevant screenshot
+* gather relevant document chunks
 * build provider request
 * receive response
 * save assistant message

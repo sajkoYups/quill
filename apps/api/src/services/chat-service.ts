@@ -45,6 +45,24 @@ export async function getChat(chatId: string) {
   return data;
 }
 
+export async function assertChatOwnedByIdentity(
+  chatId: string,
+  ownerType: "user" | "guest",
+  ownerId: string
+) {
+  const { data, error } = await supabase
+    .from("chats")
+    .select("id")
+    .eq("id", chatId)
+    .eq("owner_type", ownerType)
+    .eq("owner_id", ownerId)
+    .single();
+
+  if (error || !data) {
+    throw AppError.notFound("Chat not found");
+  }
+}
+
 export async function getChatTimeline(chatId: string) {
   const [messagesResult, screenshotsResult] = await Promise.all([
     supabase

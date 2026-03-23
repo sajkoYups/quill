@@ -7,10 +7,22 @@ export interface TimelineEntry {
   timestamp: number;
 }
 
+export interface ChatDocument {
+  id: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  extraction_status: "pending" | "ready" | "failed";
+  extraction_error: string | null;
+  selected: boolean;
+  created_at: string;
+}
+
 export interface ChatSession {
   id: string;
   title: string;
   entries: TimelineEntry[];
+  documents: ChatDocument[];
   latestScreenshot: string | null;
   createdAt: number;
 }
@@ -26,6 +38,11 @@ interface ChatState {
   addScreenshot: (dataUrl: string) => void;
   addUserMessage: (content: string) => void;
   addAssistantMessage: (content: string) => void;
+  setChatDocuments: (chatId: string, documents: ChatDocument[]) => void;
+  upsertDocument: (chatId: string, document: ChatDocument) => void;
+  toggleDocumentSelected: (chatId: string, documentId: string) => void;
+  removeDocument: (chatId: string, documentId: string) => void;
+  getSelectedDocumentIds: () => string[];
   deleteChat: (chatId: string) => void;
   getRecentHistory: (count?: number) => Array<{ role: "user" | "assistant"; content: string }>;
   getLatestScreenshot: () => string | null;
@@ -50,6 +67,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       id: chatId,
       title: "New Chat",
       entries: [],
+      documents: [],
       latestScreenshot: null,
       createdAt: Date.now(),
     };
@@ -145,6 +163,66 @@ export const useChatStore = create<ChatState>((set, get) => ({
         c.id === activeChatId ? { ...c, entries: [...c.entries, entry] } : c
       ),
     }));
+  },
+
+  setChatDocuments: (chatId, documents) => {
+    set((state) => ({
+      chats: state.chats.map((c) =>
+        c.id === chatId ? { ...c, documents } : c
+      ),
+    }));
+  },
+
+  upsertDocument: (chatId, document) => {
+    set((state) => ({
+      chats: state.chats.map((c) => {
+        if (c.id !== chatId) return c;
+        const existing = c.documents.find((d) => d.id === document.id);
+        if (existing) {
+          return {
+            ...c,
+            documents: c.documents.map((d) =>
+              d.id === document.id ? { ...d, ...document } : d
+            ),
+          };
+        }
+        return { ...c, documents: [document, ...c.documents] };
+      }),
+    }));
+  },
+
+  toggleDocumentSelected: (chatId, documentId) => {
+    set((state) => ({
+      chats: state.chats.map((c) =>
+        c.id === chatId
+          ? {
+              ...c,
+              documents: c.documents.map((d) =>
+                d.id === documentId ? { ...d, selected: !d.selected } : d
+              ),
+            }
+          : c
+      ),
+    }));
+  },
+
+  removeDocument: (chatId, documentId) => {
+    set((state) => ({
+      chats: state.chats.map((c) =>
+        c.id === chatId
+          ? {
+              ...c,
+              documents: c.documents.filter((d) => d.id !== documentId),
+            }
+          : c
+      ),
+    }));
+  },
+
+  getSelectedDocumentIds: () => {
+    const chat = get().getActiveChat();
+    if (!chat) return [];
+    return chat.documents.filter((d) => d.selected).map((d) => d.id);
   },
 
   getRecentHistory: (count = 10) => {
