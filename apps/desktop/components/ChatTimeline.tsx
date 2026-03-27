@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import { useChatStore, type TimelineEntry } from "@/stores/chat-store";
 
@@ -94,16 +95,17 @@ export default function ChatTimeline({ isLoading }: ChatTimelineProps) {
 
   if (!activeChat || activeChat.entries.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/30">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="m21 15-5-5L5 21" />
-          </svg>
-        </div>
-        <p className="text-sm text-white/40 mb-1">No messages yet</p>
-        <p className="text-xs text-white/25">Take a screenshot to get started</p>
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 gap-4">
+        <Image
+          src="/logo.png"
+          alt="Quill"
+          width={102}
+          height={102}
+          className="opacity-90"
+        />
+        <p className="text-sm text-white/50 leading-relaxed max-w-[220px]">
+          Hey, I am Quill, your AI desktop assistant. Ask a question, send a screenshot or add a file and let&apos;s get started
+        </p>
       </div>
     );
   }

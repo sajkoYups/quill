@@ -3,7 +3,7 @@ import path from "path";
 import crypto from "crypto";
 import Store from "electron-store";
 
-const store = new Store();
+const store = new Store<{ device_id: string }>();
 let mainWindow: BrowserWindow | null = null;
 let isPinned = true;
 
@@ -30,6 +30,7 @@ function createWindow() {
     resizable: true,
     alwaysOnTop: isPinned,
     skipTaskbar: false,
+    icon: path.join(app.getAppPath(), "public", "logo.png"),
     webPreferences: {
       preload: path.join(__dirname, "../preload/index.js"),
       contextIsolation: true,
@@ -92,6 +93,9 @@ function registerIpcHandlers() {
 }
 
 app.whenReady().then(() => {
+  if (process.platform === "darwin") {
+    app.dock?.setIcon(path.join(app.getAppPath(), "public", "logo.png"));
+  }
   registerIpcHandlers();
   createWindow();
 });
