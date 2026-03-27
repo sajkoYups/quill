@@ -2,7 +2,8 @@ export class AppError extends Error {
   constructor(
     public statusCode: number,
     message: string,
-    public details?: unknown
+    public details?: unknown,
+    public code?: string
   ) {
     super(message);
     this.name = "AppError";
@@ -16,8 +17,8 @@ export class AppError extends Error {
     return new AppError(401, message);
   }
 
-  static forbidden(message = "Forbidden") {
-    return new AppError(403, message);
+  static forbidden(message: string, details?: unknown) {
+    return new AppError(403, message, details);
   }
 
   static notFound(message = "Not found") {
@@ -30,5 +31,12 @@ export class AppError extends Error {
 
   static internal(message = "Internal server error") {
     return new AppError(500, message);
+  }
+
+  /** Provider (e.g. OpenRouter) rejected the prompt for policy/safety reasons. */
+  static contentFilterBlocked(
+    message = "Request blocked by provider content policy"
+  ) {
+    return new AppError(403, message, undefined, "CONTENT_FILTER_BLOCKED");
   }
 }

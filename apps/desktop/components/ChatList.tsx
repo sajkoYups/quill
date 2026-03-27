@@ -10,6 +10,9 @@ interface ChatListProps {
 
 export default function ChatList({ onNewChat }: ChatListProps) {
   const chats = useChatStore((s) => s.chats);
+  const contentFilterThreadlessByChatId = useChatStore(
+    (s) => s.contentFilterThreadlessByChatId
+  );
   const activeChatId = useChatStore((s) => s.activeChatId);
   const setActiveChat = useChatStore((s) => s.setActiveChat);
   const deleteChat = useChatStore((s) => s.deleteChat);
@@ -76,9 +79,16 @@ export default function ChatList({ onNewChat }: ChatListProps) {
             >
               <div className="min-w-0 flex-1">
                 <p className="text-sm truncate">{chat.title}</p>
-                <p className="text-[10px] text-white/25 mt-0.5">
-                  {chat.entries.length} messages
-                </p>
+                <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-0.5">
+                  <p className="text-[10px] text-white/25">
+                    {chat.entries.length} messages
+                  </p>
+                  {contentFilterThreadlessByChatId[chat.id] ? (
+                    <span className="text-[10px] text-amber-400/90 shrink-0">
+                      Sensitive info protection
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <button
                 onClick={(e) => handleDeleteChat(e, chat.id)}

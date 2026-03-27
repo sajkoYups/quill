@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useChatStore } from "@/stores/chat-store";
+import {
+  useChatStore,
+  CONTENT_FILTER_BLOCKED_CODE,
+} from "@/stores/chat-store";
 import { useUIStore } from "@/stores/ui-store";
 import { useIdentityStore } from "@/stores/identity-store";
 import ScreenshotButton from "./ScreenshotButton";
@@ -44,6 +47,12 @@ export default function Sidebar() {
   const removeDocument = useChatStore((s) => s.removeDocument);
   const getSelectedDocumentIds = useChatStore((s) => s.getSelectedDocumentIds);
   const deselectDocuments = useChatStore((s) => s.deselectDocuments);
+  const contentFilterThreadlessByChatId = useChatStore(
+    (s) => s.contentFilterThreadlessByChatId
+  );
+  const setContentFilterThreadlessForChat = useChatStore(
+    (s) => s.setContentFilterThreadlessForChat
+  );
   const activeChat = useChatStore((s) =>
     s.chats.find((chat) => chat.id === s.activeChatId)
   );
@@ -172,7 +181,10 @@ export default function Sidebar() {
         chatId = serverChatId;
       }
 
-      const history = getRecentHistory(10);
+      const recent = getRecentHistory(10);
+      const threadless =
+        useChatStore.getState().contentFilterThreadlessByChatId[chatId] === true;
+      const historyPayload = threadless ? [] : recent.slice(0, -1);
       const screenshot = getLatestScreenshot();
 
       const res = await fetch(`${API_URL}/chats/${chatId}/ask`, {
@@ -182,13 +194,38 @@ export default function Sidebar() {
           message,
           screenshot: screenshot || undefined,
           documentIds,
-          history: history.slice(0, -1),
+          history: historyPayload,
         }),
       });
 
-      if (!res.ok) throw new Error("API request failed");
+      let body: { error?: string; code?: string; response?: string } = {};
+      try {
+        body = await res.json();
+      } catch {
+        body = {};
+      }
 
-      const data = await res.json();
+      if (!res.ok) {
+        if (
+          res.status === 403 &&
+          body.code === CONTENT_FILTER_BLOCKED_CODE
+        ) {
+          setContentFilterThreadlessForChat(chatId, true);
+          addAssistantMessage(
+            "That message was not sent to the AI because it looked like sensitive personal or payment information " +
+              "(for example a credit card number). Quill and the AI service block that on purpose so those details " +
+              "are not processed or exposed in ways that could harm you.\n\n" +
+              "For this chat, new questions are sent without your earlier messages attached, so past sensitive text " +
+              "is not sent again—while everything you’ve written still appears in your timeline below. You can keep " +
+              "chatting here normally."
+          );
+          fetchUsage(API_URL, getHeaders());
+          return;
+        }
+        throw new Error(body.error || "API request failed");
+      }
+
+      const data = body as { response: string; usage?: unknown };
       addAssistantMessage(data.response);
       if (documentIds.length > 0) {
         deselectDocuments(chatId, documentIds);
@@ -209,6 +246,7 @@ export default function Sidebar() {
     addAssistantMessage,
     getRecentHistory,
     getLatestScreenshot,
+    setContentFilterThreadlessForChat,
     createChatOnServer,
     replaceChatId,
     setActiveChat,
@@ -387,6 +425,18 @@ export default function Sidebar() {
       </header>
 
       <UsageBanner />
+
+      {activeChatId && contentFilterThreadlessByChatId[activeChatId] ? (
+        <div
+          className="shrink-0 px-3 py-2 text-[11px] leading-snug text-amber-200/90 bg-amber-500/10 border-b border-amber-500/20"
+          role="status"
+        >
+          Protecting your information: earlier messages in this chat are not
+          sent to the AI anymore, so sensitive details from the conversation are
+          not re-sent. You can keep asking questions here; your full history
+          stays visible to you below.
+        </div>
+      ) : null}
 
       {/* Main content */}
       {showAuth ? (

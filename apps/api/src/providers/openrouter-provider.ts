@@ -1,4 +1,19 @@
 import type { AIProvider, AIResponse, ChatMessage } from "./ai-provider.js";
+import { AppError } from "../utils/app-error.js";
+
+function throwIfOpenRouterContentFilter(status: number, bodyText: string): void {
+  if (status !== 403) return;
+  let parsed: { error?: { message?: string } } | null = null;
+  try {
+    parsed = JSON.parse(bodyText) as { error?: { message?: string } };
+  } catch {
+    return;
+  }
+  const msg = parsed?.error?.message ?? "";
+  if (/content filter/i.test(msg)) {
+    throw AppError.contentFilterBlocked();
+  }
+}
 
 interface OpenRouterMessage {
   role: "user" | "assistant" | "system";
@@ -89,6 +104,7 @@ export class OpenRouterProvider implements AIProvider {
 
     if (!response.ok) {
       const text = await response.text();
+      throwIfOpenRouterContentFilter(response.status, text);
       throw new Error(`OpenRouter API error: ${response.status} ${text}`);
     }
 

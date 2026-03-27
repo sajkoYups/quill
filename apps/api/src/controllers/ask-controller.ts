@@ -15,8 +15,8 @@ export async function handleAsk(
   res: Response,
   next: NextFunction
 ) {
+  const chatId = String(req.params.chatId);
   try {
-    const chatId = String(req.params.chatId);
     if (!req.identity) throw AppError.unauthorized();
     const { message, screenshot, history, documentIds } = req.body;
 
@@ -94,6 +94,12 @@ export async function handleAsk(
       usage: result.usage,
     });
   } catch (err) {
+    if (err instanceof AppError && err.code === "CONTENT_FILTER_BLOCKED") {
+      console.warn("[content-filter] blocked request", {
+        chatId,
+        code: err.code,
+      });
+    }
     next(err);
   }
 }
