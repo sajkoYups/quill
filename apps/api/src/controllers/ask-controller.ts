@@ -26,16 +26,14 @@ export async function handleAsk(
       req.identity.ownerId
     );
 
-    if (isSupabaseConfigured()) {
-      const limit = await usageService.checkLimit(
-        req.identity.ownerType,
-        req.identity.ownerId
+    const limit = await usageService.checkLimit(
+      req.identity.ownerType,
+      req.identity.ownerId
+    );
+    if (!limit.allowed) {
+      throw AppError.tooManyRequests(
+        "Usage limit reached. Please upgrade your plan or wait until next month."
       );
-      if (!limit.allowed) {
-        throw AppError.tooManyRequests(
-          "Usage limit reached. Please upgrade your plan or wait until next month."
-        );
-      }
     }
 
     let screenshotForAI = screenshot;

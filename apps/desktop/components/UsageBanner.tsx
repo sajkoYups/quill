@@ -7,7 +7,7 @@ import { useIdentityStore } from "@/stores/identity-store";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export default function UsageBanner() {
-  const { warning, blocked, totalTokens, limit } = useUsageStore();
+  const { warning, blocked, totalTokens, limit, tier } = useUsageStore();
   const user = useIdentityStore((s) => s.user);
   const getHeaders = useIdentityStore((s) => s.getHeaders);
 
@@ -31,19 +31,21 @@ export default function UsageBanner() {
   if (!warning && !blocked) return null;
 
   const percentage = Math.min(100, Math.round((totalTokens / limit) * 100));
+  const showUpgrade = tier !== "paid" && !!user;
+  const actionLabel = "Upgrade to Plus";
 
   if (blocked) {
     return (
       <div className="px-4 py-2 bg-red-900/40 border-b border-red-500/20 flex items-center justify-between">
         <p className="text-xs text-red-300">
-          Usage limit reached ({percentage}%).
+          Usage limit reached ({percentage}%). {tier === "guest" ? "Sign in and upgrade to Plus for more tokens." : "Upgrade to Plus for more tokens."}
         </p>
-        {user && (
+        {showUpgrade && (
           <button
             onClick={handleUpgrade}
             className="text-xs px-2 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white transition"
           >
-            Upgrade
+            {actionLabel}
           </button>
         )}
       </div>
@@ -55,12 +57,12 @@ export default function UsageBanner() {
       <p className="text-xs text-amber-300">
         Nearing usage limit ({percentage}% used).
       </p>
-      {user && (
+      {showUpgrade && (
         <button
           onClick={handleUpgrade}
           className="text-xs px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-white transition"
         >
-          Upgrade
+          {actionLabel}
         </button>
       )}
     </div>

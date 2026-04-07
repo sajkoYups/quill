@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured } from "../db/supabase.js";
 import { AppError } from "../utils/app-error.js";
 
 let stripe: Stripe | null = null;
+const PAID_PLAN_NAME = "plus";
 
 function getStripe(): Stripe {
   if (stripe) return stripe;
@@ -41,7 +42,7 @@ export async function createCheckoutSession(userId: string, email: string) {
     customer_email: customerId ? undefined : email,
     success_url: `${process.env.STRIPE_SUCCESS_URL || "https://quill.app/success"}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: process.env.STRIPE_CANCEL_URL || "https://quill.app/cancel",
-    metadata: { userId },
+    metadata: { userId, planName: PAID_PLAN_NAME },
   });
 
   return { url: session.url, sessionId: session.id };
@@ -115,7 +116,7 @@ async function onCheckoutComplete(session: Stripe.Checkout.Session) {
       user_id: userId,
       stripe_customer_id: customerId || null,
       stripe_subscription_id: subscriptionId,
-      plan_name: "pro",
+      plan_name: PAID_PLAN_NAME,
       status: "active",
       updated_at: new Date().toISOString(),
     },
@@ -126,16 +127,27 @@ async function onCheckoutComplete(session: Stripe.Checkout.Session) {
 async function onSubscriptionUpdated(subscription: Stripe.Subscription) {
   if (!isSupabaseConfigured()) return;
 
-  const item = subscription.items?.data?.[0];
+  const subscriptionAny = subscription as unknown as {
+    current_period_start?: number;
+    current_period_end?: number;
+  };
+  const isPaidStatus = ["active", "trialing", "past_due"].includes(
+    subscription.status
+  );
   const update: Record<string, unknown> = {
     status: subscription.status,
+    plan_name: isPaidStatus ? PAID_PLAN_NAME : "free",
     updated_at: new Date().toISOString(),
   };
-  if (item?.current_period_start) {
-    update.current_period_start = new Date(item.current_period_start * 1000).toISOString();
+  if (subscriptionAny.current_period_start) {
+    update.current_period_start = new Date(
+      subscriptionAny.current_period_start * 1000
+    ).toISOString();
   }
-  if (item?.current_period_end) {
-    update.current_period_end = new Date(item.current_period_end * 1000).toISOString();
+  if (subscriptionAny.current_period_end) {
+    update.current_period_end = new Date(
+      subscriptionAny.current_period_end * 1000
+    ).toISOString();
   }
 
   await supabase
@@ -150,6 +162,7 @@ async function onSubscriptionDeleted(subscription: Stripe.Subscription) {
   await supabase
     .from("subscriptions")
     .update({
+      plan_name: "free",
       status: "canceled",
       updated_at: new Date().toISOString(),
     })

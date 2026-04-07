@@ -65,6 +65,7 @@ export default function Sidebar() {
 
   const fetchUsage = useUsageStore((s) => s.fetchUsage);
   const isBlocked = useUsageStore((s) => s.blocked);
+  const setBlocked = useUsageStore((s) => s.setBlocked);
 
   useEffect(() => {
     const hasElectron = typeof window !== "undefined" && !!window.electronAPI;
@@ -133,6 +134,11 @@ export default function Sidebar() {
       cancelled = true;
     };
   }, [activeChatId, getHeaders, isIdentityInitialized, setChatDocuments]);
+
+  useEffect(() => {
+    if (!isIdentityInitialized) return;
+    fetchUsage(API_URL, getHeaders());
+  }, [fetchUsage, getHeaders, isIdentityInitialized, user?.id]);
 
   const handleTogglePin = useCallback(async () => {
     if (!window.electronAPI) return;
@@ -206,6 +212,10 @@ export default function Sidebar() {
       }
 
       if (!res.ok) {
+        if (res.status === 429) {
+          setBlocked(true);
+          fetchUsage(API_URL, getHeaders());
+        }
         if (
           res.status === 403 &&
           body.code === CONTENT_FILTER_BLOCKED_CODE
@@ -254,6 +264,7 @@ export default function Sidebar() {
     deselectDocuments,
     getHeaders,
     fetchUsage,
+    setBlocked,
   ]);
 
   const handlePickDocument = useCallback(() => {
@@ -493,7 +504,7 @@ export default function Sidebar() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask something..."
-              disabled={isLoading}
+              disabled={isLoading || isBlocked}
               className="flex-1 px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/[0.08] outline-none focus:border-blue-500/50 transition placeholder:text-white/25 disabled:opacity-50"
             />
             <button
