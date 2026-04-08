@@ -2,6 +2,12 @@
   "name": "@quill/desktop",
   "version": "0.0.1",
   "private": true,
+  "description": "Quill desktop assistant",
+  "homepage": "https://quill.app",
+  "author": {
+    "name": "Quill",
+    "email": "hello@quill.app"
+  },
   "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "concurrently -n next,electron \"next dev -p 3000\" \"npm run dev:electron\"",
