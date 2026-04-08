@@ -57,7 +57,7 @@ function UserBubble({ entry }: { entry: TimelineEntry }) {
             ))}
           </div>
         ) : null}
-        <div className="px-3 py-2 rounded-2xl rounded-br-md bg-blue-600 text-sm leading-relaxed w-full">
+        <div className="px-3 py-2 rounded-2xl rounded-br-md bg-blue-600 text-sm leading-relaxed w-full select-text">
           {entry.content}
         </div>
       </div>
@@ -68,7 +68,7 @@ function UserBubble({ entry }: { entry: TimelineEntry }) {
 function AssistantBubble({ entry }: { entry: TimelineEntry }) {
   return (
     <div className="flex justify-start my-1.5">
-      <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-bl-md bg-white/[0.07] text-sm leading-relaxed prose prose-invert prose-sm prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 max-w-none">
+      <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-bl-md bg-white/[0.07] text-sm leading-relaxed prose prose-invert prose-sm prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 max-w-none select-text">
         <ReactMarkdown>{entry.content}</ReactMarkdown>
       </div>
     </div>

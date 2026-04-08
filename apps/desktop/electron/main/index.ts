@@ -6,6 +6,7 @@ import Store from "electron-store";
 const store = new Store<{ device_id: string }>();
 let mainWindow: BrowserWindow | null = null;
 let isPinned = true;
+const SCREENSHOT_HIDE_DELAY_MS = 150;
 
 function getOrCreateDeviceId(): string {
   let deviceId = store.get("device_id") as string | undefined;
@@ -49,6 +50,10 @@ function createWindow() {
   });
 }
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function registerIpcHandlers() {
   ipcMain.handle("toggle-pin", () => {
     if (!mainWindow) return false;
@@ -82,13 +87,28 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle("capture-screenshot", async (_event, sourceId: string) => {
-    const sources = await desktopCapturer.getSources({
-      types: ["screen"],
-      thumbnailSize: screen.getPrimaryDisplay().workAreaSize,
-    });
-    const target = sources.find((s) => s.id === sourceId);
-    if (!target) throw new Error("Monitor not found");
-    return target.thumbnail.toDataURL();
+    const windowRef = mainWindow;
+    const shouldRestoreWindow = Boolean(windowRef && !windowRef.isDestroyed() && windowRef.isVisible());
+
+    if (shouldRestoreWindow) {
+      windowRef!.hide();
+      await delay(SCREENSHOT_HIDE_DELAY_MS);
+    }
+
+    try {
+      const sources = await desktopCapturer.getSources({
+        types: ["screen"],
+        thumbnailSize: screen.getPrimaryDisplay().workAreaSize,
+      });
+      const target = sources.find((s) => s.id === sourceId);
+      if (!target) throw new Error("Monitor not found");
+      return target.thumbnail.toDataURL();
+    } finally {
+      if (shouldRestoreWindow && windowRef && !windowRef.isDestroyed()) {
+        windowRef.show();
+        windowRef.setAlwaysOnTop(isPinned);
+      }
+    }
   });
 }
 

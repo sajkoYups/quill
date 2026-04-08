@@ -10,6 +10,7 @@ interface ScreenshotButtonProps {
 export default function ScreenshotButton({ onScreenshotCaptured }: ScreenshotButtonProps) {
   const [monitors, setMonitors] = useState<MonitorInfo[]>([]);
   const [showPicker, setShowPicker] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -28,12 +29,19 @@ export default function ScreenshotButton({ onScreenshotCaptured }: ScreenshotBut
   const handleClick = useCallback(async () => {
     if (!window.electronAPI) return;
 
-    const available = await window.electronAPI.getMonitors();
-    if (available.length === 1) {
-      await captureFromMonitor(available[0].id);
-    } else {
-      setMonitors(available);
-      setShowPicker(true);
+    setIsPreparing(true);
+    try {
+      const available = await window.electronAPI.getMonitors();
+      if (available.length === 1) {
+        await captureFromMonitor(available[0].id);
+      } else {
+        setMonitors(available);
+        setShowPicker(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch monitors:", err);
+    } finally {
+      setIsPreparing(false);
     }
   }, []);
 
@@ -55,10 +63,10 @@ export default function ScreenshotButton({ onScreenshotCaptured }: ScreenshotBut
     <div className="relative">
       <button
         onClick={handleClick}
-        disabled={isCapturing}
+        disabled={isPreparing || isCapturing}
         className="px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition font-medium shrink-0"
       >
-        {isCapturing ? "Capturing..." : "Screenshot"}
+        {isCapturing ? "Capturing..." : isPreparing ? "Preparing..." : "Screenshot"}
       </button>
 
       {showPicker && monitors.length > 0 && (
@@ -72,6 +80,7 @@ export default function ScreenshotButton({ onScreenshotCaptured }: ScreenshotBut
               <button
                 key={monitor.id}
                 onClick={() => captureFromMonitor(monitor.id)}
+                disabled={isCapturing}
                 className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-white/10 transition text-left"
               >
                 <img
