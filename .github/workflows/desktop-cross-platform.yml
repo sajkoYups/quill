@@ -1,0 +1,55 @@
+name: Desktop Cross Platform
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build-desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            npm_script: dist:linux
+            artifact_name: quill-linux
+            artifact_path: apps/desktop/release/*
+          - os: windows-latest
+            npm_script: dist:win
+            artifact_name: quill-windows
+            artifact_path: apps/desktop/release/*
+          - os: macos-latest
+            npm_script: dist:mac
+            artifact_name: quill-macos
+            artifact_path: apps/desktop/release/*
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared workspace package
+        run: npm run build -w @quill/shared
+
+      - name: Build and package desktop app
+        run: npm run ${{ matrix.npm_script }} -w @quill/desktop
+
+      - name: Upload desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error

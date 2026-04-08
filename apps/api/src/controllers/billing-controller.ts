@@ -48,6 +48,9 @@ export async function handleStripeWebhook(
   try {
     const signature = req.headers["stripe-signature"];
     if (!signature) throw AppError.badRequest("Missing stripe-signature header");
+    if (!Buffer.isBuffer(req.body)) {
+      throw AppError.badRequest("Stripe webhook requires raw body");
+    }
 
     await billingService.handleWebhookEvent(
       req.body,

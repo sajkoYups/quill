@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIdentityStore } from "@/stores/identity-store";
 import { useUsageStore } from "@/stores/usage-store";
 
@@ -17,6 +17,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
   const { totalTokens, limit, remaining, warning, blocked, tier } = useUsageStore();
   const [isBusy, setIsBusy] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
+  const [billingNotice, setBillingNotice] = useState<string | null>(null);
 
   const percentage =
     limit > 0 ? Math.min(100, Math.round((totalTokens / limit) * 100)) : 0;
@@ -25,6 +26,23 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
     if (ownerType === "user") return "Free";
     return "Guest";
   }, [ownerType, tier]);
+  const billingStatus = useMemo(() => {
+    if (ownerType !== "user") return "Guest account";
+    return tier === "paid" ? "Subscription active" : "Free plan";
+  }, [ownerType, tier]);
+
+  const refreshBilling = useCallback(async () => {
+    setBillingError(null);
+    setBillingNotice(null);
+    try {
+      await fetchUsage(API_URL, getHeaders());
+      setBillingNotice("Billing status refreshed.");
+    } catch (err) {
+      setBillingError(
+        err instanceof Error ? err.message : "Unable to refresh billing status"
+      );
+    }
+  }, [API_URL, fetchUsage, getHeaders]);
 
   const openUpgrade = useCallback(async () => {
     if (!user?.email) return;
@@ -39,13 +57,13 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to start checkout");
       if (data.url) window.open(data.url, "_blank");
-      await fetchUsage(API_URL, getHeaders());
+      setBillingNotice("Checkout opened. Return here and click Refresh Billing.");
     } catch (err) {
       setBillingError(err instanceof Error ? err.message : "Upgrade failed");
     } finally {
       setIsBusy(false);
     }
-  }, [API_URL, fetchUsage, getHeaders, user?.email]);
+  }, [API_URL, getHeaders, user?.email]);
 
   const openPortal = useCallback(async () => {
     setBillingError(null);
@@ -58,12 +76,20 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to open billing portal");
       if (data.url) window.open(data.url, "_blank");
-      await fetchUsage(API_URL, getHeaders());
+      setBillingNotice("Billing portal opened. Return here and click Refresh Billing.");
     } catch (err) {
       setBillingError(err instanceof Error ? err.message : "Unable to open portal");
     } finally {
       setIsBusy(false);
     }
+  }, [API_URL, getHeaders]);
+
+  useEffect(() => {
+    const onFocus = () => {
+      fetchUsage(API_URL, getHeaders());
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [API_URL, fetchUsage, getHeaders]);
 
   return (
@@ -93,6 +119,7 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
               Current plan: <span className="text-white/80">{planLabel}</span>
               {tier === "paid" ? " ($9/month)" : ""}
             </p>
+            <p className="text-xs text-white/40">Status: {billingStatus}</p>
             <div className="pt-1">
               {tier === "paid" ? (
                 <button
@@ -112,6 +139,15 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
                 </button>
               )}
             </div>
+            <div>
+              <button
+                onClick={refreshBilling}
+                disabled={isBusy}
+                className="text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/15 disabled:opacity-60 text-white transition"
+              >
+                Refresh Billing
+              </button>
+            </div>
             {!user && (
               <p className="text-[11px] text-white/35">
                 Sign in first to subscribe to Plus.
@@ -119,6 +155,9 @@ export default function SettingsScreen({ onClose }: SettingsScreenProps) {
             )}
             {billingError && (
               <p className="text-[11px] text-red-300">{billingError}</p>
+            )}
+            {billingNotice && !billingError && (
+              <p className="text-[11px] text-emerald-300">{billingNotice}</p>
             )}
           </div>
         </section>

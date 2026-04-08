@@ -4,6 +4,8 @@ import { AppError } from "../utils/app-error.js";
 
 let stripe: Stripe | null = null;
 const PAID_PLAN_NAME = "plus";
+const WEBHOOK_EVENT_TTL_MS = 1000 * 60 * 60;
+const processedWebhookEvents = new Map<string, number>();
 
 function getStripe(): Stripe {
   if (stripe) return stripe;
@@ -17,10 +19,37 @@ export function isStripeConfigured(): boolean {
   return !!process.env.STRIPE_SECRET_KEY;
 }
 
+/**
+ * Ensures a row exists in public.users for this auth user id so subscriptions.user_id FK succeeds.
+ */
+export async function ensurePublicUserRecord(userId: string, email: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const safeEmail =
+    email?.trim() || `${userId}@billing.placeholder.local`;
+  const { error } = await supabase.from("users").upsert(
+    {
+      id: userId,
+      email: safeEmail,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
+  if (error) {
+    console.error("[billing] ensurePublicUserRecord failed:", error.message, {
+      userId,
+    });
+    throw AppError.internal(`Failed to sync user record: ${error.message}`);
+  }
+}
+
 export async function createCheckoutSession(userId: string, email: string) {
   const s = getStripe();
   const priceId = process.env.STRIPE_PRICE_ID;
   if (!priceId) throw AppError.internal("STRIPE_PRICE_ID not configured");
+
+  if (isSupabaseConfigured()) {
+    await ensurePublicUserRecord(userId, email);
+  }
 
   let customerId: string | undefined;
   if (isSupabaseConfigured()) {
@@ -74,8 +103,12 @@ export async function handleWebhookEvent(rawBody: Buffer, signature: string) {
   const s = getStripe();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) throw AppError.internal("STRIPE_WEBHOOK_SECRET not configured");
+  if (!Buffer.isBuffer(rawBody)) {
+    throw AppError.badRequest("Invalid webhook payload");
+  }
 
   const event = s.webhooks.constructEvent(rawBody, signature, webhookSecret);
+  if (isDuplicateWebhookEvent(event.id)) return;
 
   switch (event.type) {
     case "checkout.session.completed": {
@@ -96,6 +129,22 @@ export async function handleWebhookEvent(rawBody: Buffer, signature: string) {
   }
 }
 
+function isDuplicateWebhookEvent(eventId: string): boolean {
+  const now = Date.now();
+  for (const [id, createdAt] of processedWebhookEvents.entries()) {
+    if (now - createdAt > WEBHOOK_EVENT_TTL_MS) {
+      processedWebhookEvents.delete(id);
+    }
+  }
+
+  if (processedWebhookEvents.has(eventId)) {
+    return true;
+  }
+
+  processedWebhookEvents.set(eventId, now);
+  return false;
+}
+
 async function onCheckoutComplete(session: Stripe.Checkout.Session) {
   if (!isSupabaseConfigured()) return;
   const userId = session.metadata?.userId;
@@ -111,7 +160,7 @@ async function onCheckoutComplete(session: Stripe.Checkout.Session) {
       ? session.customer
       : session.customer?.id;
 
-  await supabase.from("subscriptions").upsert(
+  const { error } = await supabase.from("subscriptions").upsert(
     {
       user_id: userId,
       stripe_customer_id: customerId || null,
@@ -122,6 +171,13 @@ async function onCheckoutComplete(session: Stripe.Checkout.Session) {
     },
     { onConflict: "stripe_subscription_id" }
   );
+  if (error) {
+    console.error("[billing] onCheckoutComplete upsert failed:", error.message, {
+      userId,
+      subscriptionId,
+    });
+    throw AppError.internal(`Subscription upsert failed: ${error.message}`);
+  }
 }
 
 async function onSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -150,21 +206,77 @@ async function onSubscriptionUpdated(subscription: Stripe.Subscription) {
     ).toISOString();
   }
 
-  await supabase
+  const { data, error } = await supabase
     .from("subscriptions")
     .update(update)
-    .eq("stripe_subscription_id", subscription.id);
+    .eq("stripe_subscription_id", subscription.id)
+    .select("user_id")
+    .maybeSingle();
+
+  if (error) throw AppError.internal(`Failed to update subscription: ${error.message}`);
+
+  if (data?.user_id) return;
+
+  const customerId =
+    typeof subscription.customer === "string"
+      ? subscription.customer
+      : subscription.customer?.id;
+
+  if (!customerId) return;
+
+  const { error: customerUpdateError } = await supabase
+    .from("subscriptions")
+    .update(update)
+    .eq("stripe_customer_id", customerId);
+  if (customerUpdateError) {
+    console.error(
+      "[billing] onSubscriptionUpdated customer fallback failed:",
+      customerUpdateError.message,
+      { customerId, subscriptionId: subscription.id }
+    );
+    throw AppError.internal(
+      `Failed to update subscription by customer: ${customerUpdateError.message}`
+    );
+  }
 }
 
 async function onSubscriptionDeleted(subscription: Stripe.Subscription) {
   if (!isSupabaseConfigured()) return;
 
-  await supabase
+  const update = {
+    plan_name: "free",
+    status: "canceled",
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
     .from("subscriptions")
-    .update({
-      plan_name: "free",
-      status: "canceled",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("stripe_subscription_id", subscription.id);
+    .update(update)
+    .eq("stripe_subscription_id", subscription.id)
+    .select("user_id")
+    .maybeSingle();
+
+  if (error) throw AppError.internal(`Failed to cancel subscription: ${error.message}`);
+  if (data?.user_id) return;
+
+  const customerId =
+    typeof subscription.customer === "string"
+      ? subscription.customer
+      : subscription.customer?.id;
+  if (!customerId) return;
+
+  const { error: customerCancelError } = await supabase
+    .from("subscriptions")
+    .update(update)
+    .eq("stripe_customer_id", customerId);
+  if (customerCancelError) {
+    console.error(
+      "[billing] onSubscriptionDeleted customer fallback failed:",
+      customerCancelError.message,
+      { customerId, subscriptionId: subscription.id }
+    );
+    throw AppError.internal(
+      `Failed to cancel subscription by customer: ${customerCancelError.message}`
+    );
+  }
 }
