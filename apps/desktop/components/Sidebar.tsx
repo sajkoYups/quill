@@ -31,6 +31,7 @@ export default function Sidebar() {
   const setIsPinned = useUIStore((s) => s.setIsPinned);
   const showChatList = useUIStore((s) => s.showChatList);
   const toggleChatList = useUIStore((s) => s.toggleChatList);
+  const setShowChatList = useUIStore((s) => s.setShowChatList);
 
   const activeChatId = useChatStore((s) => s.activeChatId);
   const createChat = useChatStore((s) => s.createChat);
@@ -149,6 +150,16 @@ export default function Sidebar() {
   const handleMinimize = useCallback(() => {
     window.electronAPI?.minimizeWindow();
   }, []);
+
+  const handleOpenSettingsFromMenu = useCallback(() => {
+    setShowSettings(true);
+    setShowChatList(true);
+  }, [setShowChatList]);
+
+  const handleCloseSettings = useCallback(() => {
+    setShowSettings(false);
+    setShowChatList(true);
+  }, [setShowChatList]);
 
   const handleScreenshotCaptured = useCallback(
     (dataUrl: string) => {
@@ -400,16 +411,6 @@ export default function Sidebar() {
               Login
             </button>
           )}
-          <button
-            onClick={() => setShowSettings(true)}
-            className="px-1.5 py-1 text-xs rounded hover:bg-white/10 transition text-white/60"
-            title="Settings"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-            </svg>
-          </button>
           {isElectron && (
             <>
               <button
@@ -453,9 +454,9 @@ export default function Sidebar() {
       {showAuth ? (
         <AuthScreen onClose={() => setShowAuth(false)} />
       ) : showSettings ? (
-        <SettingsScreen onClose={() => setShowSettings(false)} />
+        <SettingsScreen onClose={handleCloseSettings} />
       ) : showChatList ? (
-        <ChatList onNewChat={handleNewChat} />
+        <ChatList onNewChat={handleNewChat} onOpenSettings={handleOpenSettingsFromMenu} />
       ) : (
         <ChatTimeline isLoading={isLoading} />
       )}

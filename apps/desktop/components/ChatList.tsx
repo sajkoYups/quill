@@ -6,9 +6,10 @@ import { useUIStore } from "@/stores/ui-store";
 
 interface ChatListProps {
   onNewChat?: () => void | Promise<void>;
+  onOpenSettings?: () => void;
 }
 
-export default function ChatList({ onNewChat }: ChatListProps) {
+export default function ChatList({ onNewChat, onOpenSettings }: ChatListProps) {
   const chats = useChatStore((s) => s.chats);
   const contentFilterThreadlessByChatId = useChatStore(
     (s) => s.contentFilterThreadlessByChatId
@@ -40,13 +41,17 @@ export default function ChatList({ onNewChat }: ChatListProps) {
     [deleteChat]
   );
 
+  const handleOpenSettings = () => {
+    onOpenSettings?.();
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
         <h2 className="text-sm font-medium text-white/70">Chat History</h2>
         <button
           onClick={() => setShowChatList(false)}
-          className="text-xs text-white/40 hover:text-white/60 transition"
+          className="text-xs font-medium text-white/75 hover:text-white px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition"
         >
           Close
         </button>
@@ -99,6 +104,15 @@ export default function ChatList({ onNewChat }: ChatListProps) {
             </div>
           ))
         )}
+      </div>
+
+      <div className="px-3 py-2 border-t border-white/[0.08] shrink-0">
+        <button
+          onClick={handleOpenSettings}
+          className="w-full px-3 py-2 text-sm rounded-lg bg-white/10 text-white/80 hover:bg-white/15 transition text-left"
+        >
+          Settings
+        </button>
       </div>
     </div>
   );

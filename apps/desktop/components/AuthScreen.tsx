@@ -47,7 +47,7 @@ export default function AuthScreen({ onClose }: AuthScreenProps) {
         </h2>
         <button
           onClick={onClose}
-          className="text-xs text-white/40 hover:text-white/60 transition"
+          className="text-xs font-medium text-white/75 hover:text-white px-2 py-1 rounded bg-white/5 hover:bg-white/10 transition"
         >
           Back
         </button>
