@@ -5,15 +5,16 @@
 Desktop installers are produced from `apps/desktop/release`:
 - macOS: DMG/ZIP (x64 + arm64)
 - Windows: NSIS installer (x64)
-- Linux: AppImage + DEB (x64)
 
 Commands:
 - `npm run dist:mac -w @quill/desktop`
 - `npm run dist:win -w @quill/desktop`
-- `npm run dist:linux -w @quill/desktop`
 
-CI workflow:
+CI workflow (push/PR to `main`):
 - `.github/workflows/desktop-cross-platform.yml`
+
+GitHub Release workflow (push a version tag, e.g. `v0.0.1`):
+- `.github/workflows/release-desktop.yml` — builds macOS + Windows and attaches artifacts to the release.
 
 ## 2) Environment variables
 

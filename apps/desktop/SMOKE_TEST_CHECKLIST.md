@@ -2,7 +2,6 @@
 
 Target platforms:
 - Windows 10/11 (x64)
-- Ubuntu LTS (x64)
 - macOS (Intel + Apple Silicon)
 
 ## Pre-checks

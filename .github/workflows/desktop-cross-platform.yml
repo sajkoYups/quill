@@ -13,10 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            npm_script: dist:linux
-            artifact_name: quill-linux
-            artifact_path: apps/desktop/release/*
           - os: windows-latest
             npm_script: dist:win
             artifact_name: quill-windows

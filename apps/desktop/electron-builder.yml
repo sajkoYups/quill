@@ -34,14 +34,3 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
-linux:
-  maintainer: Quill <hello@quill.app>
-  icon: public/logo.png
-  category: Utility
-  target:
-    - target: AppImage
-      arch:
-        - x64
-    - target: deb
-      arch:
-        - x64
