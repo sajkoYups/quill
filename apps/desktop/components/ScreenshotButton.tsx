@@ -72,7 +72,7 @@ export default function ScreenshotButton({ onScreenshotCaptured }: ScreenshotBut
       {showPicker && monitors.length > 0 && (
         <div
           ref={pickerRef}
-          className="absolute bottom-full left-0 mb-2 bg-[#1a1a1a] border border-white/10 rounded-lg p-2 shadow-xl z-50 min-w-[280px]"
+          className="absolute bottom-full left-0 mb-2 bg-[#1a1a1a] border border-white/10 rounded-lg p-2 shadow-xl z-50 w-[min(280px,calc(100vw-1rem))] max-w-[calc(100vw-1rem)]"
         >
           <p className="text-xs text-white/40 mb-2 px-1">Select monitor</p>
           <div className="flex flex-col gap-1.5">
@@ -81,14 +81,14 @@ export default function ScreenshotButton({ onScreenshotCaptured }: ScreenshotBut
                 key={monitor.id}
                 onClick={() => captureFromMonitor(monitor.id)}
                 disabled={isCapturing}
-                className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-white/10 transition text-left"
+                className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-white/10 transition text-left min-w-0"
               >
                 <img
                   src={monitor.thumbnail}
                   alt={monitor.name}
                   className="w-16 h-9 rounded border border-white/10 object-cover"
                 />
-                <span className="text-sm text-white/80">{monitor.name}</span>
+                <span className="text-sm text-white/80 min-w-0 truncate">{monitor.name}</span>
               </button>
             ))}
           </div>

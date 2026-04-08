@@ -9,7 +9,11 @@ function ScreenshotCard({ entry }: { entry: TimelineEntry }) {
   return (
     <div className="my-2">
       <div className="rounded-lg overflow-hidden border border-white/10">
-        <img src={entry.content} alt="Screenshot" className="w-full" />
+        <img
+          src={entry.content}
+          alt="Screenshot"
+          className="w-full max-w-full h-auto object-contain"
+        />
       </div>
       <p className="text-[10px] text-white/20 text-center mt-1">
         Screenshot captured
@@ -68,7 +72,7 @@ function UserBubble({ entry }: { entry: TimelineEntry }) {
 function AssistantBubble({ entry }: { entry: TimelineEntry }) {
   return (
     <div className="flex justify-start my-1.5">
-      <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-bl-md bg-white/[0.07] text-sm leading-relaxed prose prose-invert prose-sm prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 max-w-none select-text">
+      <div className="max-w-[85%] min-w-0 overflow-hidden px-3 py-2 rounded-2xl rounded-bl-md bg-white/[0.07] text-sm leading-relaxed prose prose-invert prose-sm prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-p:break-words prose-li:break-words prose-a:break-all prose-code:break-words prose-code:whitespace-pre-wrap prose-pre:max-w-full prose-pre:whitespace-pre-wrap prose-pre:break-words prose-table:w-full prose-table:table-fixed prose-th:break-words prose-td:break-words select-text">
         <ReactMarkdown>{entry.content}</ReactMarkdown>
       </div>
     </div>

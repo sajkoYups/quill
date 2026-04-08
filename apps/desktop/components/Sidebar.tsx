@@ -360,10 +360,10 @@ export default function Sidebar() {
   }, [createChatOnServer, createChat, isIdentityInitialized]);
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen overflow-x-hidden">
       {/* Title bar */}
-      <header className="drag-region flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] shrink-0">
-        <div className="no-drag flex items-center gap-2">
+      <header className="drag-region flex items-center justify-between gap-2 px-4 py-2.5 border-b border-white/[0.08] shrink-0 overflow-hidden">
+        <div className="no-drag flex items-center gap-2 min-w-0">
           <button
             onClick={toggleChatList}
             className="px-1.5 py-1 text-xs rounded hover:bg-white/10 transition text-white/60"
@@ -375,7 +375,7 @@ export default function Sidebar() {
           </button>
           <h1 className="text-sm font-semibold tracking-wide">Quill</h1>
         </div>
-        <div className="no-drag flex items-center gap-1.5">
+        <div className="no-drag flex items-center gap-1.5 shrink-0">
           <button
             onClick={handleNewChat}
             className="px-2 py-1 text-xs rounded bg-white/10 text-white/60 hover:bg-white/15 transition"
@@ -477,7 +477,7 @@ export default function Sidebar() {
             onToggleSelected={handleToggleDocument}
             onDelete={handleDeleteDocument}
           />
-          <div className="flex gap-2">
+          <div className="flex gap-2 min-w-0 flex-wrap">
             <ScreenshotButton onScreenshotCaptured={handleScreenshotCaptured} />
             <button
               type="button"
@@ -505,7 +505,7 @@ export default function Sidebar() {
               onKeyDown={handleKeyDown}
               placeholder="Ask something..."
               disabled={isLoading || isBlocked}
-              className="flex-1 px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/[0.08] outline-none focus:border-blue-500/50 transition placeholder:text-white/25 disabled:opacity-50"
+              className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg bg-white/5 border border-white/[0.08] outline-none focus:border-blue-500/50 transition placeholder:text-white/25 disabled:opacity-50"
             />
             <button
               onClick={handleSend}

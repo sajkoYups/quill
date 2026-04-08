@@ -36,8 +36,8 @@ export default function UsageBanner() {
 
   if (blocked) {
     return (
-      <div className="px-4 py-2 bg-red-900/40 border-b border-red-500/20 flex items-center justify-between">
-        <p className="text-xs text-red-300">
+      <div className="px-4 py-2 bg-red-900/40 border-b border-red-500/20 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-red-300 break-words min-w-0">
           Usage limit reached ({percentage}%). {tier === "guest" ? "Sign in and upgrade to Plus for more tokens." : "Upgrade to Plus for more tokens."}
         </p>
         {showUpgrade && (
@@ -53,8 +53,8 @@ export default function UsageBanner() {
   }
 
   return (
-    <div className="px-4 py-2 bg-amber-900/30 border-b border-amber-500/20 flex items-center justify-between">
-      <p className="text-xs text-amber-300">
+    <div className="px-4 py-2 bg-amber-900/30 border-b border-amber-500/20 flex flex-wrap items-center justify-between gap-2">
+      <p className="text-xs text-amber-300 break-words min-w-0">
         Nearing usage limit ({percentage}% used).
       </p>
       {showUpgrade && (
