@@ -3,10 +3,10 @@
 import { useMemo } from "react";
 
 const DOWNLOAD_URLS = {
-  mac: process.env.NEXT_PUBLIC_DOWNLOAD_URL_MAC || "https://downloads.quill.app/mac",
+  mac: process.env.NEXT_PUBLIC_DOWNLOAD_URL_MAC || "https://downloads.quill.app/mac/latest.dmg",
   windows:
     process.env.NEXT_PUBLIC_DOWNLOAD_URL_WINDOWS ||
-    "https://downloads.quill.app/windows",
+    "https://downloads.quill.app/win/latest.exe",
   linux:
     process.env.NEXT_PUBLIC_DOWNLOAD_URL_LINUX || "https://downloads.quill.app/linux",
 };
