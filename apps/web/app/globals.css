@@ -130,6 +130,7 @@ p {
   margin-top: 1rem;
   color: #9dafd9;
   font-size: 0.95rem;
+  max-width: 70ch;
 }
 
 .ctaRow {

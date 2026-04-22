@@ -3,15 +3,20 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://quill.app"),
-  title: "Quill | Desktop AI Assistant for Context-Aware Work",
+  title: "Quill | Privacy-First Desktop AI Assistant",
   description:
-    "Quill is a desktop AI assistant that understands screenshots and docs, helping teams ship faster with context-aware AI support.",
+    "Quill is a privacy-first desktop AI assistant for companies, professionals, students, and everyday users. Get practical help from screenshots and documents with no training on your data.",
   keywords: [
     "desktop AI assistant",
-    "AI assistant for developers",
+    "privacy-first AI assistant",
+    "AI assistant for professionals",
+    "AI assistant for students",
+    "simple AI assistant",
     "context-aware AI",
     "screenshot-aware AI assistant",
     "document-aware AI helper",
+    "AI assistant for work and study",
+    "AI assistant that does not train on your data",
     "desktop productivity AI",
     "Quill app",
   ],
@@ -23,9 +28,9 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Quill | Desktop AI Assistant for Context-Aware Work",
+    title: "Quill | Privacy-First Desktop AI Assistant",
     description:
-      "Quill is a desktop AI assistant that understands screenshots and docs, helping teams ship faster with context-aware AI support.",
+      "Quill is a privacy-first desktop AI assistant for companies, professionals, students, and everyday users. Practical help from screenshots and documents with no training on your data.",
     type: "website",
     url: "https://quill.app",
     siteName: "Quill",
@@ -40,9 +45,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Quill | Desktop AI Assistant for Context-Aware Work",
+    title: "Quill | Privacy-First Desktop AI Assistant",
     description:
-      "Quill is a desktop AI assistant that understands screenshots and docs, helping teams ship faster with context-aware AI support.",
+      "Quill is a privacy-first desktop AI assistant for work and study, with encryption in transit and at rest and no training on your data.",
     images: ["/og-image.png"],
   },
 };

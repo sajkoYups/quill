@@ -8,7 +8,7 @@ const softwareSchema = {
   operatingSystem: "macOS, Windows, Linux",
   applicationCategory: "ProductivityApplication",
   description:
-    "Quill is a desktop AI assistant that understands screenshots and documents, then gives context-aware help while you work.",
+    "Quill is an easy desktop AI assistant for companies, professionals, students, and everyday users. It uses screenshot and document context while keeping data handling privacy-first.",
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "USD",
@@ -44,7 +44,7 @@ const faqSchema = {
       name: "What is Quill?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Quill is a desktop AI assistant designed to stay beside your work and use screenshots or documents as context.",
+        text: "Quill is an easy desktop AI assistant for companies, professionals, students, and anyone who wants practical AI help without a steep learning curve.",
       },
     },
     {
@@ -61,6 +61,14 @@ const faqSchema = {
       acceptedAnswer: {
         "@type": "Answer",
         text: "Quill offers two free tiers and one paid tier. Plus billing is managed inside the Quill desktop app settings.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How does Quill handle my data?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Quill encrypts data in transit and at rest. Quill does not use your data to train models.",
       },
     },
   ],
@@ -92,45 +100,58 @@ export default function Page() {
       </header>
 
       <section className="section hero">
-        <p className="eyebrow">Desktop AI Assistant</p>
-        <h1>Context-aware AI help beside your work, not in another tab.</h1>
+        <p className="eyebrow">Easy, Privacy-First Desktop AI</p>
+        <h1>The desktop AI assistant for companies, professionals, students, and everyday users.</h1>
         <p className="lead">
-          Quill is built for teams that move fast. Pin it on your desktop, attach screenshots
-          and docs, and get focused help with less context switching.
+          Quill makes AI practical from day one. Keep it beside your work, attach screenshots and
+          documents, and get clear answers without extra setup or context switching.
         </p>
         <div className="ctaRow">
           <PrimaryDownloadCta location="hero" />
           <a href="#product" className="btn btnSecondary">
-            See what Quill builds
+            See how Quill works
           </a>
         </div>
-        <p className="subtleLine">Built for builders, operators, and product teams shipping every day.</p>
+        <p className="subtleLine">
+          Built for teams and individuals who want fast results, simple workflows, and clear
+          privacy expectations.
+        </p>
       </section>
 
       <section id="product" className="section">
-        <h2>What we are building at Quill</h2>
+        <h2>Why people choose Quill</h2>
         <div className="grid3">
           <article className="card">
-            <h3>Desktop-native workflow</h3>
-            <p>Keep Quill pinned while coding, writing specs, reviewing docs, or debugging incidents.</p>
+            <h3>Simple desktop-native workflow</h3>
+            <p>
+              Keep Quill pinned while coding, writing, studying, or reviewing docs without
+              learning complex AI tooling.
+            </p>
           </article>
           <article className="card">
-            <h3>Visual context understanding</h3>
-            <p>Drop screenshots and files directly into Quill for answers grounded in your real workflow.</p>
+            <h3>Visual and document context</h3>
+            <p>
+              Drop screenshots and files directly into Quill for answers grounded in your real
+              task, not generic output.
+            </p>
           </article>
           <article className="card">
-            <h3>Actionable outputs</h3>
-            <p>Go from question to next action quickly with responses focused on implementation and execution.</p>
+            <h3>Actionable answers for real users</h3>
+            <p>
+              Go from question to next action quickly whether you are part of a company team, an
+              independent professional, or a student.
+            </p>
           </article>
         </div>
       </section>
 
       <section id="features" className="section">
-        <h2>Why teams choose Quill</h2>
+        <h2>Designed for work and study</h2>
         <ul className="featureList">
-          <li>Desktop-first AI assistant designed for deep work and faster iteration.</li>
-          <li>Screenshot-aware and document-aware conversations for richer context.</li>
-          <li>Simple pricing with in-app billing and clear plan boundaries.</li>
+          <li>Built for companies, professionals, students, and users who prefer simpler AI workflows.</li>
+          <li>Desktop-first assistant designed for deep work, study sessions, and faster iteration.</li>
+          <li>Screenshot-aware and document-aware conversations for richer, task-specific context.</li>
+          <li>Transparent plans: two free options and Plus for very high monthly usage.</li>
           <li>Cross-platform downloads across macOS, Windows, and Linux.</li>
         </ul>
       </section>
@@ -139,13 +160,16 @@ export default function Page() {
         <h2>Trust, privacy, and product transparency</h2>
         <div className="grid2">
           <article className="card">
-            <h3>Transparent billing</h3>
-            <p>Manage your Plus subscription directly in the desktop app settings with clear monthly pricing.</p>
+            <h3>Clear data handling</h3>
+            <p>
+              Quill encrypts data in transit and at rest. We do not use your data to train models.
+            </p>
           </article>
           <article className="card">
-            <h3>Built for practical use</h3>
+            <h3>Transparent plans and billing</h3>
             <p>
-              Quill focuses on real workflows: screenshot-driven debugging, document Q&A, and desktop-native productivity.
+              Start without an account, create a free account for more monthly usage, or upgrade
+              to Plus. Paid billing is managed directly in the app settings.
             </p>
           </article>
         </div>
@@ -209,18 +233,21 @@ export default function Page() {
             <h3>Plus</h3>
             <p className="price">$9<span>/month</span></p>
             <p>For enormous monthly usage with up to 2,000,000 tokens and the best experience for heavy workflows.</p>
-            {/* <PrimaryDownloadCta location="pricing_plus" /> */}
+            <PrimaryDownloadCta location="pricing_plus" />
           </article>
         </div>
       </section>
 
       <section className="section finalCta">
-        <h2>Start with Quill today</h2>
-        <p>Use Quill as your desktop productivity AI assistant for focused execution and faster shipping.</p>
+        <h2>Start with Quill in minutes</h2>
+        <p>
+          Download Quill and start with Guest Free. Create an account later if you want more
+          monthly usage.
+        </p>
         <div className="ctaRow">
           <PrimaryDownloadCta location="final_cta" />
           <a href="#faq" className="btn btnSecondary">
-            Read FAQs
+            Compare plans and FAQs
           </a>
         </div>
         <DownloadLinks location="footer_downloads" />
@@ -229,16 +256,31 @@ export default function Page() {
       <section id="faq" className="section faq">
         <h2>Frequently asked questions</h2>
         <article>
-          <h3>Is Quill a desktop AI assistant?</h3>
-          <p>Yes. Quill is designed specifically as a desktop AI assistant for day-to-day work.</p>
+          <h3>Who is Quill for?</h3>
+          <p>
+            Quill is for companies, professionals, students, and everyday users who want simple,
+            useful AI help without a heavy learning curve.
+          </p>
+        </article>
+        <article>
+          <h3>How does Quill handle my data?</h3>
+          <p>
+            Quill encrypts data in transit and at rest, and Quill does not use your data to train models.
+          </p>
         </article>
         <article>
           <h3>Can Quill use screenshots and documents as context?</h3>
-          <p>Yes. You can attach screenshots and files to get more relevant, context-aware responses.</p>
+          <p>
+            Yes. You can attach screenshots and files to get more relevant, context-aware
+            responses.
+          </p>
         </article>
         <article>
           <h3>How do I start using Quill?</h3>
-          <p>Download Quill for your platform, install it, then start asking questions with your project context.</p>
+          <p>
+            Download Quill for your platform and start right away with Guest Free, then create an
+            account later if you want more monthly usage.
+          </p>
         </article>
       </section>
     </main>
