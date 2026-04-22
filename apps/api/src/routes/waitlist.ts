@@ -8,6 +8,7 @@ const waitlistSignupSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   source: z.string().min(1).max(80).optional(),
   platform: z.string().min(1).max(40).optional(),
+  recaptchaToken: z.string().min(1),
 });
 
 const router = Router();

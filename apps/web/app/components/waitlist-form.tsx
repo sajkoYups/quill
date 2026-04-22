@@ -1,10 +1,23 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+const RECAPTCHA_SCRIPT_ID = "quill-recaptcha-script";
+
+declare global {
+  interface Window {
+    grecaptcha?: {
+      enterprise?: {
+        ready: (cb: () => void) => void;
+        execute: (siteKey: string, options: { action: string }) => Promise<string>;
+      };
+    };
+  }
+}
 
 function detectPlatform(): string | undefined {
   if (typeof navigator === "undefined") return undefined;
@@ -29,12 +42,44 @@ export function WaitlistForm() {
   const [feedback, setFeedback] = useState("");
   const platform = useMemo(() => detectPlatform(), []);
 
+  useEffect(() => {
+    if (!RECAPTCHA_SITE_KEY) return;
+    if (document.getElementById(RECAPTCHA_SCRIPT_ID)) return;
+
+    const script = document.createElement("script");
+    script.id = RECAPTCHA_SCRIPT_ID;
+    script.src = `https://www.google.com/recaptcha/enterprise.js?render=${RECAPTCHA_SITE_KEY}`;
+    script.async = true;
+    document.head.appendChild(script);
+  }, []);
+
+  async function getRecaptchaToken(): Promise<string> {
+    if (!RECAPTCHA_SITE_KEY) {
+      throw new Error("reCAPTCHA is not configured yet. Please try again soon.");
+    }
+
+    const enterpriseCaptcha = window.grecaptcha?.enterprise;
+    if (!enterpriseCaptcha) {
+      throw new Error("Security checks are still loading. Please try again.");
+    }
+
+    return await new Promise<string>((resolve, reject) => {
+      enterpriseCaptcha.ready(() => {
+        enterpriseCaptcha
+          .execute(RECAPTCHA_SITE_KEY, { action: "waitlist_submit" })
+          .then(resolve)
+          .catch(() => reject(new Error("Unable to complete security verification.")));
+      });
+    });
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitState("loading");
     setFeedback("");
 
     try {
+      const recaptchaToken = await getRecaptchaToken();
       const response = await fetch(`${API_URL}/waitlist/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -43,6 +88,7 @@ export function WaitlistForm() {
           name: name || undefined,
           source: "landing-page",
           platform,
+          recaptchaToken,
         }),
       });
 

@@ -1,11 +1,14 @@
 import { isSupabaseConfigured, supabase } from "../db/supabase.js";
 import { AppError } from "../utils/app-error.js";
+import { verifyRecaptchaToken } from "./recaptcha-service.js";
 
 export interface WaitlistSignupInput {
   email: string;
   name?: string;
   source?: string;
   platform?: string;
+  recaptchaToken: string;
+  clientIp?: string;
 }
 
 export interface WaitlistSignupResult {
@@ -21,6 +24,8 @@ function normalizeInput(input: WaitlistSignupInput): WaitlistSignupInput {
     name: input.name?.trim() || undefined,
     source: input.source?.trim() || "landing-page",
     platform: input.platform?.trim() || undefined,
+    recaptchaToken: input.recaptchaToken.trim(),
+    clientIp: input.clientIp,
   };
 }
 
@@ -37,6 +42,7 @@ export async function signupWaitlist(
   }
 
   const input = normalizeInput(rawInput);
+  await verifyRecaptchaToken(input.recaptchaToken, "waitlist_submit", input.clientIp);
 
   const { error } = await supabase.from("waitlist").upsert(
     {
