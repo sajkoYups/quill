@@ -34,11 +34,12 @@ interface OpenRouterResponse {
 export class OpenRouterProvider implements AIProvider {
   name = "openrouter";
   private apiKey: string;
-  // private model = "openai/gpt-4o";
-  private model = "mistralai/mistral-small-2603";
+  private model: string;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
+    // Keep model configurable so guardrail-compatible model changes do not require code edits.
+    this.model = process.env.OPENROUTER_MODEL || "mistralai/mistral-small-2603";
   }
 
   async analyzeChatWithScreenshot(
