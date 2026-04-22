@@ -47,7 +47,13 @@ export async function handleGetChat(
   next: NextFunction
 ) {
   try {
+    if (!req.identity) throw AppError.unauthorized();
     const chatId = String(req.params.chatId);
+    await chatService.assertChatOwnedByIdentity(
+      chatId,
+      req.identity.ownerType,
+      req.identity.ownerId
+    );
     const chat = await chatService.getChat(chatId);
     res.json(chat);
   } catch (err) {
@@ -61,7 +67,13 @@ export async function handleDeleteChat(
   next: NextFunction
 ) {
   try {
+    if (!req.identity) throw AppError.unauthorized();
     const chatId = String(req.params.chatId);
+    await chatService.assertChatOwnedByIdentity(
+      chatId,
+      req.identity.ownerType,
+      req.identity.ownerId
+    );
     await chatService.deleteChat(chatId);
     res.json({ ok: true });
   } catch (err) {
@@ -75,7 +87,13 @@ export async function handleGetTimeline(
   next: NextFunction
 ) {
   try {
+    if (!req.identity) throw AppError.unauthorized();
     const chatId = String(req.params.chatId);
+    await chatService.assertChatOwnedByIdentity(
+      chatId,
+      req.identity.ownerType,
+      req.identity.ownerId
+    );
     const timeline = await chatService.getChatTimeline(chatId);
     res.json(timeline);
   } catch (err) {
