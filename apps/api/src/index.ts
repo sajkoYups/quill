@@ -11,6 +11,7 @@ import askRouter from "./routes/ask.js";
 import usageRouter from "./routes/usage.js";
 import billingRouter from "./routes/billing.js";
 import settingsRouter from "./routes/settings.js";
+import waitlistRouter from "./routes/waitlist.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -37,6 +38,7 @@ app.use(askRouter);
 app.use(usageRouter);
 app.use(billingRouter);
 app.use(settingsRouter);
+app.use(waitlistRouter);
 
 app.use(errorHandler);
 

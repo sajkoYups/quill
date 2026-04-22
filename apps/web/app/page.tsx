@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { DownloadLinks, PrimaryDownloadCta } from "./components/download-buttons";
+import { PrimaryWaitlistCta, WaitlistLinks } from "./components/download-buttons";
+import { WaitlistForm } from "./components/waitlist-form";
 
 const softwareSchema = {
   "@context": "https://schema.org",
@@ -107,7 +108,7 @@ export default function Page() {
           documents, and get clear answers without extra setup or context switching.
         </p>
         <div className="ctaRow">
-          <PrimaryDownloadCta location="hero" />
+          <PrimaryWaitlistCta location="hero" />
           <a href="#product" className="btn btnSecondary">
             See how Quill works
           </a>
@@ -233,25 +234,27 @@ export default function Page() {
             <h3>Plus</h3>
             <p className="price">$9<span>/month</span></p>
             <p>For enormous monthly usage with up to 2,000,000 tokens and the best experience for heavy workflows.</p>
-            <PrimaryDownloadCta location="pricing_plus" />
+            <PrimaryWaitlistCta location="pricing_plus" />
           </article>
         </div>
       </section>
 
       <section className="section finalCta">
-        <h2>Start with Quill in minutes</h2>
+        <h2>Join the Quill waitlist</h2>
         <p>
-          Download Quill and start with Guest Free. Create an account later if you want more
-          monthly usage.
+          Quill downloads will be available soon. Join the waitlist now and we will notify you as
+          soon as access opens.
         </p>
         <div className="ctaRow">
-          <PrimaryDownloadCta location="final_cta" />
+          <PrimaryWaitlistCta location="final_cta" />
           <a href="#faq" className="btn btnSecondary">
             Compare plans and FAQs
           </a>
         </div>
-        <DownloadLinks location="footer_downloads" />
+        <WaitlistLinks location="footer_waitlist_links" />
       </section>
+
+      <WaitlistForm />
 
       <section id="faq" className="section faq">
         <h2>Frequently asked questions</h2>
@@ -278,8 +281,7 @@ export default function Page() {
         <article>
           <h3>How do I start using Quill?</h3>
           <p>
-            Download Quill for your platform and start right away with Guest Free, then create an
-            account later if you want more monthly usage.
+            Join the waitlist now. We will notify you as soon as downloads are available.
           </p>
         </article>
       </section>

@@ -302,6 +302,46 @@ p {
   margin-bottom: 0.32rem;
 }
 
+.waitlistForm {
+  max-width: 540px;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.waitlistField {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--muted-strong);
+  font-weight: 600;
+}
+
+.waitlistField input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.78rem 0.85rem;
+}
+
+.waitlistField input:focus-visible {
+  outline: 2px solid #6f91ff;
+  outline-offset: 1px;
+}
+
+.waitlistForm button[disabled] {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.waitlistFeedbackSuccess {
+  color: #bcd1ff;
+}
+
+.waitlistFeedbackError {
+  color: #ff9fb0;
+}
+
 @media (max-width: 900px) {
   .grid3 {
     grid-template-columns: 1fr 1fr;
