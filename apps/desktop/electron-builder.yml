@@ -4,6 +4,7 @@ directories:
   output: release
   buildResources: public
 files:
+  - "out/**/*"
   - ".next/**/*"
   - "dist-electron/**/*"
   - "public/**/*"

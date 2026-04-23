@@ -138,8 +138,10 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (!isIdentityInitialized) return;
+    // Clear stale "blocked" state while refreshing usage for the current identity.
+    setBlocked(false);
     fetchUsage(API_URL, getHeaders());
-  }, [fetchUsage, getHeaders, isIdentityInitialized, user?.id]);
+  }, [fetchUsage, getHeaders, isIdentityInitialized, setBlocked, user?.id]);
 
   const handleTogglePin = useCallback(async () => {
     if (!window.electronAPI) return;

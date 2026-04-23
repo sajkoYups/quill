@@ -38,7 +38,30 @@ export const useIdentityStore = create<IdentityState>((set, get) => ({
 
     const sb = getSupabase();
     if (sb && isSupabaseAuthConfigured()) {
-      const { data: { session } } = await sb.auth.getSession();
+      sb.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          set({
+            ownerType: "user",
+            ownerId: session.user.id,
+            user: session.user,
+            session,
+            isInitialized: true,
+          });
+        } else {
+          const { deviceId } = get();
+          set({
+            ownerType: "guest",
+            ownerId: deviceId,
+            user: null,
+            session: null,
+            isInitialized: true,
+          });
+        }
+      });
+
+      const {
+        data: { session },
+      } = await sb.auth.getSession();
       if (session?.user) {
         set({
           ownerType: "user",
@@ -47,26 +70,6 @@ export const useIdentityStore = create<IdentityState>((set, get) => ({
           session,
           isInitialized: true,
         });
-
-        sb.auth.onAuthStateChange((_event, session) => {
-          if (session?.user) {
-            set({
-              ownerType: "user",
-              ownerId: session.user.id,
-              user: session.user,
-              session,
-            });
-          } else {
-            const { deviceId } = get();
-            set({
-              ownerType: "guest",
-              ownerId: deviceId,
-              user: null,
-              session: null,
-            });
-          }
-        });
-
         return;
       }
     }
@@ -137,7 +140,7 @@ export const useIdentityStore = create<IdentityState>((set, get) => ({
     if (session?.access_token) {
       headers["Authorization"] = `Bearer ${session.access_token}`;
     }
-    if (deviceId) headers["x-device-id"] = deviceId;
+    if (ownerType === "guest" && deviceId) headers["x-device-id"] = deviceId;
     headers["x-owner-type"] = ownerType;
     if (ownerId) headers["x-owner-id"] = ownerId;
     return headers;
