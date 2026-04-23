@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { PrimaryWaitlistCta, WaitlistLinks } from "./components/download-buttons";
+import { RotatingAudience } from "./components/rotating-audience";
 import { WaitlistForm } from "./components/waitlist-form";
 
 const softwareSchema = {
@@ -102,7 +103,9 @@ export default function Page() {
 
       <section className="section hero">
         <p className="eyebrow">Easy, Privacy-First Desktop AI</p>
-        <h1>The desktop AI assistant for companies, professionals, students, and everyday users.</h1>
+        <h1 className="heroTitle">
+          The desktop AI assistant for <RotatingAudience />
+        </h1>
         <p className="lead">
           Quill makes AI practical from day one. Keep it beside your work, attach screenshots and
           documents, and get clear answers without extra setup or context switching.
