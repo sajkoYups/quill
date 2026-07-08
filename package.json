@@ -6,8 +6,9 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build -w @quill/shared && npm run build -w @quill/api && npm run build:electron -w @quill/desktop && npm run build -w @quill/web",
+    "build": "npm run build -w @quill/shared && npm run build -w @quill/document-processing && npm run build -w @quill/api && npm run build:electron -w @quill/desktop && npm run build -w @quill/web",
     "build:shared": "npm run build -w @quill/shared",
+    "build:document-processing": "npm run build -w @quill/document-processing",
     "dev:api": "npm run dev -w @quill/api",
     "dev:desktop": "npm run dev -w @quill/desktop",
     "dev:web": "npm run dev -w @quill/web",

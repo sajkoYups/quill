@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Quill | Privacy-First Desktop AI Assistant",
     description:
-      "Quill is a privacy-first desktop AI assistant for work and study, with encryption in transit and at rest and no training on your data.",
+      "Quill is a privacy-first desktop AI assistant for work and study. Your chats, screenshots, and files stay on your device in an encrypted local vault, with encrypted (TLS) connections and no training on your data.",
     images: ["/og-image.png"],
   },
 };

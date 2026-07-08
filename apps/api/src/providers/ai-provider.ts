@@ -14,6 +14,7 @@ export interface AIResponse {
 
 export interface AIProvider {
   name: string;
+  model: string;
   analyzeChatWithScreenshot(
     messages: ChatMessage[],
     screenshotBase64?: string

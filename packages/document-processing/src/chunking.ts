@@ -89,3 +89,22 @@ export function rankChunksByQuery(
 
   return chunks.slice(0, 3).map((chunk) => ({ ...chunk, score: 0 }));
 }
+
+export function buildContextBlock(
+  chunks: RankedChunk[],
+  maxChars: number
+): string {
+  if (chunks.length === 0) return "";
+  const parts: string[] = [];
+  let total = 0;
+
+  for (const chunk of chunks) {
+    const part = `Document: ${chunk.filename}\nChunk: ${chunk.chunk_index}\n${chunk.content}`.trim();
+    if (total + part.length > maxChars) break;
+    parts.push(part);
+    total += part.length;
+  }
+
+  if (parts.length === 0) return "";
+  return parts.join("\n\n---\n\n");
+}

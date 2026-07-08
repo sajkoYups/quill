@@ -14,7 +14,8 @@
     "dev:next": "next dev -p 3000",
     "dev:electron": "npm run build:electron && wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .",
     "build:next": "next build",
-    "build:electron": "tsup electron/main/index.ts electron/preload/index.ts --out-dir dist-electron --format cjs --no-dts --clean --external electron --external electron-store",
+    "build:deps": "tsc -p ../../packages/document-processing/tsconfig.json",
+    "build:electron": "npm run build:deps && tsup electron/main/index.ts electron/preload/index.ts --out-dir dist-electron --format cjs --no-dts --clean --external electron --external electron-store --external pdf-parse --external mammoth --external xlsx",
     "build": "npm run build:next && npm run build:electron",
     "pack:dir": "npm run build && electron-builder --dir --config electron-builder.yml",
     "dist:mac": "npm run build && electron-builder --mac --config electron-builder.yml --publish never",
@@ -23,13 +24,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@quill/document-processing": "^0.0.1",
     "@quill/shared": "^0.0.1",
     "@supabase/supabase-js": "^2.100.0",
     "electron-store": "^11.0.2",
+    "mammoth": "^1.12.0",
     "next": "^16.2.1",
+    "pdf-parse": "^2.4.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-markdown": "^10.1.0",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

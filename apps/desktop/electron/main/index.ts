@@ -2,6 +2,8 @@ import { app, BrowserWindow, screen, ipcMain, desktopCapturer } from "electron";
 import path from "path";
 import crypto from "crypto";
 import Store from "electron-store";
+import { registerVaultIpc } from "./vault";
+import { registerDocumentIpc } from "./documents";
 
 const store = new Store<{ device_id: string }>();
 let mainWindow: BrowserWindow | null = null;
@@ -85,6 +87,9 @@ function registerIpcHandlers() {
       thumbnail: source.thumbnail.toDataURL(),
     }));
   });
+
+  registerVaultIpc();
+  registerDocumentIpc();
 
   ipcMain.handle("capture-screenshot", async (_event, sourceId: string) => {
     const windowRef = mainWindow;
