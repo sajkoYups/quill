@@ -4,8 +4,7 @@ import { PDFParse } from "pdf-parse";
 import {
   SUPPORTED_DOCUMENT_EXTENSIONS,
   SUPPORTED_DOCUMENT_MIME_TYPES,
-} from "./document-constants.js";
-import { AppError } from "../utils/app-error.js";
+} from "./constants.js";
 
 export interface ParsedDocument {
   text: string;
@@ -27,7 +26,7 @@ export function assertDocumentTypeAllowed(filename: string, mimeType: string) {
     !SUPPORTED_DOCUMENT_EXTENSIONS.has(extension) ||
     !SUPPORTED_DOCUMENT_MIME_TYPES.has(mimeType)
   ) {
-    throw AppError.badRequest(
+    throw new Error(
       `Unsupported document type. Allowed extensions: ${Array.from(
         SUPPORTED_DOCUMENT_EXTENSIONS
       ).join(", ")}`
@@ -58,10 +57,6 @@ async function parseXlsx(buffer: Buffer): Promise<string> {
   return sheets.join("\n\n");
 }
 
-async function parseCsv(buffer: Buffer): Promise<string> {
-  return buffer.toString("utf-8");
-}
-
 async function parseTextLike(buffer: Buffer): Promise<string> {
   return buffer.toString("utf-8");
 }
@@ -86,20 +81,18 @@ export async function parseDocumentBuffer(
       text = await parseXlsx(buffer);
       break;
     case "csv":
-      text = await parseCsv(buffer);
-      break;
     case "txt":
     case "json":
     case "md":
       text = await parseTextLike(buffer);
       break;
     default:
-      throw AppError.badRequest(`Unsupported extension: ${extension}`);
+      throw new Error(`Unsupported extension: ${extension}`);
   }
 
   const normalized = normalizeText(text);
   if (!normalized) {
-    throw AppError.badRequest("Document appears empty after extraction");
+    throw new Error("Document appears empty after extraction");
   }
 
   return { text: normalized, extension };

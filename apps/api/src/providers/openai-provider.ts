@@ -3,8 +3,8 @@ import type { AIProvider, AIResponse, ChatMessage } from "./ai-provider.js";
 
 export class OpenAIProvider implements AIProvider {
   name = "openai";
+  model = "gpt-4o";
   private client: OpenAI;
-  private model = "gpt-4o";
 
   constructor(apiKey: string) {
     this.client = new OpenAI({ apiKey });

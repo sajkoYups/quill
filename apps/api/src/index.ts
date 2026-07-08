@@ -2,11 +2,11 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { requestLogger } from "./middleware/request-logger.js";
+import { securityHeaders } from "./middleware/security-headers.js";
 import { resolveIdentity } from "./middleware/identity.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { handleStripeWebhook } from "./controllers/billing-controller.js";
 import authRouter from "./routes/auth.js";
-import chatsRouter from "./routes/chats.js";
 import askRouter from "./routes/ask.js";
 import usageRouter from "./routes/usage.js";
 import billingRouter from "./routes/billing.js";
@@ -17,6 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
+app.use(securityHeaders);
 
 app.post(
   "/billing/webhooks/stripe",
@@ -33,7 +34,6 @@ app.get("/health", (_req, res) => {
 });
 
 app.use(authRouter);
-app.use(chatsRouter);
 app.use(askRouter);
 app.use(usageRouter);
 app.use(billingRouter);

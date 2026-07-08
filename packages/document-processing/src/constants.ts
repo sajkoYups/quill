@@ -1,9 +1,10 @@
-export const DOCUMENT_BUCKET = "documents";
+export const MAX_DOCUMENT_SIZE_BYTES = Number(
+  process.env.MAX_DOCUMENT_SIZE_BYTES || 15 * 1024 * 1024
+);
 
-export const MAX_DOCUMENT_SIZE_BYTES =
-  Number(process.env.MAX_DOCUMENT_SIZE_BYTES || 15 * 1024 * 1024);
-
-export const MAX_DOCUMENTS_PER_CHAT = Number(process.env.MAX_DOCUMENTS_PER_CHAT || 25);
+export const MAX_DOCUMENTS_PER_CHAT = Number(
+  process.env.MAX_DOCUMENTS_PER_CHAT || 25
+);
 
 export const MAX_DOCUMENT_CONTEXT_CHUNKS = Number(
   process.env.MAX_DOCUMENT_CONTEXT_CHUNKS || 6

@@ -15,8 +15,9 @@ import UsageBanner from "./UsageBanner";
 import SettingsScreen from "./SettingsScreen";
 import DocumentAttachmentPanel from "./DocumentAttachmentPanel";
 import { useUsageStore } from "@/stores/usage-store";
+import { API_URL, isApiUrlSecure } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL_SECURE = isApiUrlSecure(API_URL);
 
 export default function Sidebar() {
   const [isElectron, setIsElectron] = useState(false);
@@ -35,14 +36,14 @@ export default function Sidebar() {
 
   const activeChatId = useChatStore((s) => s.activeChatId);
   const createChat = useChatStore((s) => s.createChat);
-  const replaceChatId = useChatStore((s) => s.replaceChatId);
   const setActiveChat = useChatStore((s) => s.setActiveChat);
+  const hydrateFromVault = useChatStore((s) => s.hydrateFromVault);
   const addScreenshot = useChatStore((s) => s.addScreenshot);
+  const clearLatestScreenshot = useChatStore((s) => s.clearLatestScreenshot);
   const addUserMessage = useChatStore((s) => s.addUserMessage);
   const addAssistantMessage = useChatStore((s) => s.addAssistantMessage);
   const getRecentHistory = useChatStore((s) => s.getRecentHistory);
   const getLatestScreenshot = useChatStore((s) => s.getLatestScreenshot);
-  const setChatDocuments = useChatStore((s) => s.setChatDocuments);
   const upsertDocument = useChatStore((s) => s.upsertDocument);
   const toggleDocumentSelected = useChatStore((s) => s.toggleDocumentSelected);
   const removeDocument = useChatStore((s) => s.removeDocument);
@@ -79,62 +80,25 @@ export default function Sidebar() {
     initGuest(API_URL);
   }, [setIsPinned, initGuest]);
 
-  const createChatOnServer = useCallback(async () => {
-    const res = await fetch(`${API_URL}/chats`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...getHeaders() },
-      body: JSON.stringify({}),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Failed to create chat: ${res.status} ${text}`);
-    }
-    const data = await res.json();
-    return String(data.id);
-  }, [getHeaders]);
-
   useEffect(() => {
     if (!isIdentityInitialized) return;
-    if (activeChatId) return;
     let cancelled = false;
     (async () => {
       try {
-        const chatId = await createChatOnServer();
-        if (!cancelled) createChat(chatId);
-      } catch (err) {
-        console.error("Failed to initialize chat:", err);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeChatId, createChat, createChatOnServer, isIdentityInitialized]);
-
-  useEffect(() => {
-    if (!activeChatId || !isIdentityInitialized) return;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const res = await fetch(`${API_URL}/chats/${activeChatId}/documents`, {
-          headers: { ...getHeaders() },
-        });
-        if (!res.ok) return;
-        const docs = await res.json();
+        await hydrateFromVault();
         if (cancelled) return;
-        setChatDocuments(
-          activeChatId,
-          docs.map((doc: any) => ({ ...doc, selected: false }))
-        );
+        const { chats, activeChatId: currentId } = useChatStore.getState();
+        if (currentId) return;
+        if (chats.length > 0) setActiveChat(chats[0].id);
+        else createChat();
       } catch (err) {
-        console.error("Failed to load documents:", err);
+        console.error("Failed to initialize chats:", err);
       }
     })();
-
     return () => {
       cancelled = true;
     };
-  }, [activeChatId, getHeaders, isIdentityInitialized, setChatDocuments]);
+  }, [isIdentityInitialized, hydrateFromVault, createChat, setActiveChat]);
 
   useEffect(() => {
     if (!isIdentityInitialized) return;
@@ -191,14 +155,7 @@ export default function Sidebar() {
     setIsLoading(true);
 
     try {
-      let chatId = activeChatId;
-      // Migrate legacy local IDs (chat-...) to server UUID chat IDs.
-      if (chatId.startsWith("chat-")) {
-        const serverChatId = await createChatOnServer();
-        replaceChatId(chatId, serverChatId);
-        setActiveChat(serverChatId);
-        chatId = serverChatId;
-      }
+      const chatId = activeChatId;
 
       const recent = getRecentHistory(10);
       const threadless =
@@ -206,13 +163,26 @@ export default function Sidebar() {
       const historyPayload = threadless ? [] : recent.slice(0, -1);
       const screenshot = getLatestScreenshot();
 
-      const res = await fetch(`${API_URL}/chats/${chatId}/ask`, {
+      let documentContext = "";
+      if (documentIds.length > 0 && window.electronAPI?.vault) {
+        try {
+          documentContext = await window.electronAPI.vault.buildDocumentContext(
+            chatId,
+            documentIds,
+            message
+          );
+        } catch (err) {
+          console.error("Failed to build document context:", err);
+        }
+      }
+
+      const res = await fetch(`${API_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getHeaders() },
         body: JSON.stringify({
           message,
           screenshot: screenshot || undefined,
-          documentIds,
+          documentContext,
           history: historyPayload,
         }),
       });
@@ -253,6 +223,8 @@ export default function Sidebar() {
       if (documentIds.length > 0) {
         deselectDocuments(chatId, documentIds);
       }
+      // Don't keep the screenshot base64 staged after it has been sent.
+      clearLatestScreenshot();
       fetchUsage(API_URL, getHeaders());
     } catch (err) {
       console.error("Send failed:", err);
@@ -269,10 +241,8 @@ export default function Sidebar() {
     addAssistantMessage,
     getRecentHistory,
     getLatestScreenshot,
+    clearLatestScreenshot,
     setContentFilterThreadlessForChat,
-    createChatOnServer,
-    replaceChatId,
-    setActiveChat,
     getSelectedDocumentIds,
     deselectDocuments,
     getHeaders,
@@ -289,6 +259,10 @@ export default function Sidebar() {
       const file = e.target.files?.[0];
       e.target.value = "";
       if (!file || !activeChatId || !isIdentityInitialized) return;
+      if (!window.electronAPI?.vault) {
+        console.error("Document attachments require the desktop app.");
+        return;
+      }
 
       setIsUploadingDocument(true);
       try {
@@ -299,29 +273,20 @@ export default function Sidebar() {
           reader.readAsDataURL(file);
         });
 
-        const res = await fetch(`${API_URL}/chats/${activeChatId}/documents`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...getHeaders() },
-          body: JSON.stringify({
-            filename: file.name,
-            mimeType: file.type || "application/octet-stream",
-            fileData,
-          }),
+        const doc = await window.electronAPI.vault.addDocument(activeChatId, {
+          filename: file.name,
+          mimeType: file.type || "application/octet-stream",
+          fileData,
         });
 
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(body?.error || "Failed to upload document");
-        }
-
-        upsertDocument(activeChatId, { ...body, selected: true });
+        upsertDocument(activeChatId, { ...doc, selected: true });
       } catch (err) {
         console.error("Document upload failed:", err);
       } finally {
         setIsUploadingDocument(false);
       }
     },
-    [activeChatId, getHeaders, isIdentityInitialized, upsertDocument]
+    [activeChatId, isIdentityInitialized, upsertDocument]
   );
 
   const handleToggleDocument = useCallback(
@@ -336,20 +301,13 @@ export default function Sidebar() {
     async (documentId: string) => {
       if (!activeChatId) return;
       try {
-        const res = await fetch(
-          `${API_URL}/chats/${activeChatId}/documents/${documentId}`,
-          {
-            method: "DELETE",
-            headers: { ...getHeaders() },
-          }
-        );
-        if (!res.ok) throw new Error("Delete failed");
+        await window.electronAPI?.vault.deleteDocument(activeChatId, documentId);
         removeDocument(activeChatId, documentId);
       } catch (err) {
         console.error("Failed to delete document:", err);
       }
     },
-    [activeChatId, getHeaders, removeDocument]
+    [activeChatId, removeDocument]
   );
 
   const handleKeyDown = useCallback(
@@ -362,15 +320,22 @@ export default function Sidebar() {
     [handleSend]
   );
 
-  const handleNewChat = useCallback(async () => {
+  const handleNewChat = useCallback(() => {
     if (!isIdentityInitialized) return;
-    try {
-      const chatId = await createChatOnServer();
-      createChat(chatId);
-    } catch (err) {
-      console.error("Failed to create chat:", err);
-    }
-  }, [createChatOnServer, createChat, isIdentityInitialized]);
+    createChat();
+  }, [createChat, isIdentityInitialized]);
+
+  if (!API_URL_SECURE) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center text-center px-6 gap-3">
+        <p className="text-sm font-semibold text-red-300">Insecure connection blocked</p>
+        <p className="text-xs text-white/50 leading-relaxed max-w-[260px]">
+          Quill will not send your messages, screenshots or files over an
+          unencrypted connection. Configure an https:// API endpoint and restart.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-x-hidden">

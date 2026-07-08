@@ -33,8 +33,8 @@ interface OpenRouterResponse {
 
 export class OpenRouterProvider implements AIProvider {
   name = "openrouter";
+  model: string;
   private apiKey: string;
-  private model: string;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;

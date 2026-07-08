@@ -70,7 +70,7 @@ const faqSchema = {
       name: "How does Quill handle my data?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Quill encrypts data in transit and at rest. Quill does not use your data to train models.",
+        text: "Your chats, screenshots, and files are stored only on your device in an encrypted local vault, never in our database. Requests travel to the AI over encrypted (TLS) connections, and Quill does not use your data to train models.",
       },
     },
   ],
@@ -166,7 +166,9 @@ export default function Page() {
           <article className="card">
             <h3>Clear data handling</h3>
             <p>
-              Quill encrypts data in transit and at rest. We do not use your data to train models.
+              Your chats, screenshots, and files stay on your device in an encrypted local vault,
+              never in our database. Requests reach the AI over encrypted (TLS) connections, and we
+              do not use your data to train models.
             </p>
           </article>
           <article className="card">
@@ -271,7 +273,9 @@ export default function Page() {
         <article>
           <h3>How does Quill handle my data?</h3>
           <p>
-            Quill encrypts data in transit and at rest, and Quill does not use your data to train models.
+            Your chats, screenshots, and files are stored only on your device in an encrypted local
+            vault, never in our database. Requests travel to the AI over encrypted (TLS) connections,
+            and Quill does not use your data to train models.
           </p>
         </article>
         <article>
